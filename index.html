@@ -860,7 +860,7 @@ canvas { border-radius: 6px; display: block; }
   </div>
   <!-- Not connected banner -->
   <div class="save-banner" id="notConnectedBanner" style="background:rgba(255,184,48,0.07);border-color:rgba(255,184,48,0.25);color:var(--amber)">
-    💾 <span><b>Data saves locally in this browser.</b> Click <b>☁️ Connect Cloud</b> to also sync to Firebase so your data is safe across devices.</span>
+    💾 <span><b>First time here?</b> Your data saves in this browser automatically. If you had data in the old local file — click <b>📥 Restore</b> above to import it. Or start fresh by adding tasks!</span>
     <span class="save-banner-close" onclick="document.getElementById('notConnectedBanner').style.display='none'">✕</span>
   </div>
   <!-- Deadlines -->
@@ -1411,109 +1411,76 @@ canvas { border-radius: 6px; display: block; }
 
 <!-- ═══════════════════ SCRIPT ═══════════════════ -->
 <script>
-// ─────────── STORAGE — Firebase Realtime Database (CORS-safe, works from file://) ───────────
-// Uses Firebase REST API directly — no SDK, no CORS issues, works from local files.
-// Free tier: 1GB storage, 10GB/month transfer — more than enough for study data.
+// ─────────── FIREBASE CLOUD STORAGE ───────────
+const FB_LS_URL  = 'prepos_firebase_url';
+const FB_LS_PATH = 'prepos_firebase_path';
+const FB_LS_TOKEN= 'prepos_firebase_token';
 
-const FB_LS_URL  = 'prepos_firebase_url';   // stored in localStorage
-const FB_LS_PATH = 'prepos_firebase_path';  // e.g. /users/abc123/data
-const FB_LS_TOKEN= 'prepos_firebase_token'; // optional auth token
+let _fbUrl = '', _fbPath = '/prepos', _fbToken = '', _saveTimer = null;
 
-let _fbUrl   = '';   // e.g. https://YOUR-PROJECT-default-rtdb.firebaseio.com
-let _fbPath  = '';   // e.g. /prepos
-let _fbToken = '';
-let _saveTimer = null;
-
-/* ── Load credentials from localStorage ── */
-function loadCreds() {
+function loadCreds(){
   _fbUrl   = localStorage.getItem(FB_LS_URL)   || '';
   _fbPath  = localStorage.getItem(FB_LS_PATH)  || '/prepos';
   _fbToken = localStorage.getItem(FB_LS_TOKEN) || '';
 }
-
-function saveCreds(url, path, token) {
+function saveCreds(url, path, token){
   _fbUrl = url; _fbPath = path || '/prepos'; _fbToken = token || '';
-  localStorage.setItem(FB_LS_URL,   _fbUrl);
-  localStorage.setItem(FB_LS_PATH,  _fbPath);
+  localStorage.setItem(FB_LS_URL, _fbUrl);
+  localStorage.setItem(FB_LS_PATH, _fbPath);
   localStorage.setItem(FB_LS_TOKEN, _fbToken);
 }
-
-function fbEndpoint() {
-  const auth = _fbToken ? `?auth=${_fbToken}` : '';
-  return `${_fbUrl.replace(/\/$/, '')}${_fbPath}.json${auth}`;
+function fbEndpoint(){
+  const auth = _fbToken ? '?auth=' + _fbToken : '';
+  return _fbUrl.replace(/\/$/, '') + _fbPath + '.json' + auth;
 }
-
-/* ── Write to Firebase ── */
-async function fbWrite(data) {
+async function fbWrite(data){
   const res = await fetch(fbEndpoint(), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Firebase write failed (${res.status}): ${err}`);
-  }
-  return res.json();
+  if (!res.ok) throw new Error('Write ' + res.status + ': ' + await res.text());
 }
-
-/* ── Read from Firebase ── */
-async function fbRead() {
+async function fbRead(){
   const res = await fetch(fbEndpoint());
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Firebase read failed (${res.status}): ${err}`);
-  }
+  if (!res.ok) throw new Error('Read ' + res.status + ': ' + await res.text());
   return res.json();
 }
-
-/* ── Status indicator ── */
-function setSaveStatus(status) {
+function setSaveStatus(status){
   const el = document.getElementById('saveStatusEl');
   if (!el) return;
   const map = {
-    saved:   { text: '☁️ Synced',         color: 'var(--lime)'  },
-    saving:  { text: '⏳ Saving…',          color: 'var(--amber)' },
-    offline: { text: '💾 Local only',       color: 'var(--fog)'   },
-    error:   { text: '❌ Sync failed',       color: 'var(--rose)'  },
-    loading: { text: '☁️ Loading…',          color: 'var(--sky)'   },
+    saved:  { text: '☁️ Synced',     color: 'var(--lime)'  },
+    saving: { text: '⏳ Saving…',    color: 'var(--amber)' },
+    offline:{ text: '💾 Local only', color: 'var(--fog)'   },
+    error:  { text: '❌ Sync failed', color: 'var(--rose)'  },
+    loading:{ text: '☁️ Loading…',   color: 'var(--sky)'   },
   };
   const s = map[status] || map.offline;
-  el.textContent = s.text;
-  el.style.color = s.color;
+  el.textContent = s.text; el.style.color = s.color;
 }
-
-/* ── Save: localStorage immediately + Firebase debounced ── */
-function save(d) {
-  try { localStorage.setItem('prepos_data_local', JSON.stringify(d)); } catch(e) {}
+function save(d){
+  try { localStorage.setItem('prepos_data_local', JSON.stringify(d)); } catch(e){}
   clearTimeout(_saveTimer);
-  if (_fbUrl) {
+  if (_fbUrl){
     setSaveStatus('saving');
-    _saveTimer = setTimeout(() => fbWrite(d)
-      .then(() => setSaveStatus('saved'))
-      .catch(e => { setSaveStatus('error'); console.error('FB save:', e); }), 1200);
-  } else {
-    setSaveStatus('offline');
-  }
+    _saveTimer = setTimeout(() =>
+      fbWrite(d).then(() => setSaveStatus('saved'))
+                .catch(e => { setSaveStatus('error'); console.error('FB save:', e); }), 1200);
+  } else { setSaveStatus('offline'); }
 }
-
-/* ── Local fallback ── */
-function loadLocal() {
-  try { const r = localStorage.getItem('prepos_data_local'); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+function loadLocal(){
+  try { const r = localStorage.getItem('prepos_data_local'); return r ? JSON.parse(r) : null; } catch(e){ return null; }
 }
-
-/* ── Export backup ── */
-function exportData() {
-  const blob = new Blob([JSON.stringify(D, null, 2)], {type:'application/json'});
+function exportData(){
+  const blob = new Blob([JSON.stringify(D,null,2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'PrepOS_backup_' + new Date().toISOString().split('T')[0] + '.json';
   a.click(); URL.revokeObjectURL(a.href);
   toast('Backup downloaded ✓','ts');
 }
-
-/* ── Import backup ── */
-function importData() {
+function importData(){
   const inp = document.createElement('input');
   inp.type = 'file'; inp.accept = '.json';
   inp.onchange = e => {
@@ -1522,70 +1489,38 @@ function importData() {
     reader.onload = ev => {
       try {
         const imported = JSON.parse(ev.target.result);
-        if (!imported.tasks || !imported.sections) { toast('Invalid backup file','te'); return; }
+        if (!imported.tasks || !imported.sections){ toast('Invalid backup file','te'); return; }
         D = imported; save(D); nav('dashboard');
         toast('Data imported ✓','ts');
         refreshDash(); updateNavBadges();
-      } catch(err) { toast('Import failed','te'); }
+      } catch(err){ toast('Import failed','te'); }
     };
     reader.readAsText(file);
   };
   inp.click();
 }
-
-/* ── Open setup modal ── */
-function openSetup() { document.getElementById('setupModal').classList.add('open'); }
-
-/* ── Connect to Firebase ── */
-async function connectFirebase() {
-  // Clean the URL — strip whitespace, invisible chars, trailing slashes
-  let url = document.getElementById('fbUrl').value.trim().replace(/[​-‍﻿]/g,'').replace(/\/+$/, '');
-  const path  = (document.getElementById('fbPath').value.trim() || '/prepos').replace(/\/+$/, '');
+function openSetup(){ document.getElementById('setupModal').classList.add('open'); }
+async function connectFirebase(){
+  const url   = document.getElementById('fbUrl').value.trim();
+  const path  = document.getElementById('fbPath').value.trim() || '/prepos';
   const token = document.getElementById('fbToken').value.trim();
-
-  // Clear any previous error
-  const errEl = document.getElementById('fbErrorMsg');
-  if (errEl) errEl.textContent = '';
-
-  if (!url) { showFbError('Please paste your Firebase Database URL.'); return; }
-
-  // Auto-fix common mistakes: add https:// if missing
-  if (!url.startsWith('http')) url = 'https://' + url;
-
-  // Validate it looks like a Firebase URL
-  if (!url.includes('firebaseio.com') && !url.includes('firebase')) {
-    showFbError('That doesn't look like a Firebase URL. It should end with firebaseio.com — e.g. https://your-project-default-rtdb.firebaseio.com');
-    return;
-  }
-
+  if (!url){ toast('Database URL required','te'); return; }
+  if (!url.startsWith('https://')){ toast('URL must start with https://','te'); return; }
   const btn = document.getElementById('fbConnectBtn');
   btn.textContent = 'Connecting…'; btn.disabled = true;
   setSaveStatus('loading');
-
-  // Set creds for the request
   _fbUrl = url; _fbPath = path; _fbToken = token;
-
-  // Build and show the exact URL being tested so user can verify
-  const endpoint = fbEndpoint();
-  showFbError('Testing: ' + endpoint + ' …', 'info');
-
+  const errEl = document.getElementById('fbErrorMsg');
+  if (errEl) errEl.textContent = '';
   try {
     const existing = await fbRead();
-
-    if (existing && existing.tasks) {
-      D = existing;
-      if (!D.filters) D.filters = {gate:'all',vlsi:'all',cpp:'all'};
-      if (!D.activeSection) D.activeSection = {gate:null,vlsi:null,cpp:null};
-      if (!D.diary) D.diary = [];
-      if (!D.activity) D.activity = {};
-      if (!D.completedDates) D.completedDates = {};
-      if (!D.resources) D.resources = defaultResources();
+    if (existing && existing.tasks){
+      D = ensureDataShape(existing);
       toast('Connected! Existing data loaded ☁️','ts');
     } else {
       await fbWrite(D);
-      toast('Connected! Data now syncing to Firebase ☁️','ts');
+      toast('Connected! Data syncing to Firebase ☁️','ts');
     }
-
     saveCreds(url, path, token);
     document.getElementById('setupModal').classList.remove('open');
     setSaveStatus('saved');
@@ -1593,72 +1528,40 @@ async function connectFirebase() {
     document.getElementById('binInfoBar').style.display = 'flex';
     document.getElementById('binIdDisplay').textContent = url + path;
     refreshDash(); updateNavBadges();
-
-  } catch(e) {
-    const raw = e.message || String(e);
-    let friendly = '';
-
-    if (raw.toLowerCase().includes('failed to fetch') || raw.toLowerCase().includes('networkerror') || raw.toLowerCase().includes('load')) {
-      friendly = '🔴 FAILED TO FETCH — Firebase blocked the request.
-
-'
-        + 'Most likely cause: Rules are still locked.
-
-'
-        + 'Fix: Firebase Console → Realtime Database → Rules tab → replace everything with:
-'
-        + '{ "rules": { ".read": true, ".write": true } }
-'
-        + '→ click Publish → try connecting again.
-
-'
-        + 'URL tested: ' + endpoint;
-    } else if (raw.includes('401') || raw.includes('403') || raw.toLowerCase().includes('permission')) {
-      friendly = '🔴 PERMISSION DENIED
-
-Go to Firebase → Realtime Database → Rules → set .read and .write to true → Publish.';
-    } else if (raw.includes('404')) {
-      friendly = '🔴 DATABASE NOT FOUND
-
-Make sure you created a Realtime Database (not Firestore) at:
-console.firebase.google.com → Build → Realtime Database';
-    } else {
-      friendly = '🔴 ERROR: ' + raw + '
-
-URL tested: ' + endpoint;
+  } catch(e){
+    let msg = e.message || 'Unknown error';
+    if (msg.includes('fetch') || msg.includes('network') || msg.includes('NetworkError')){
+      msg = 'Cannot reach Firebase. Check: (1) URL is correct, (2) Realtime Database exists, (3) Rules allow read+write.';
+    } else if (msg.includes('401') || msg.includes('403') || msg.includes('Permission')){
+      msg = 'Permission denied. In Firebase → Realtime Database → Rules, set .read and .write to true and click Publish.';
+    } else if (msg.includes('404')){
+      msg = 'Database not found. Make sure you created a Realtime Database (not Firestore).';
     }
-
-    showFbError(friendly);
+    const errDiv = document.getElementById('fbErrorMsg');
+    if (errDiv) errDiv.textContent = '❌ ' + msg;
     setSaveStatus('error');
-    _fbUrl = ''; _fbPath = ''; _fbToken = '';
-    loadCreds();
+    _fbUrl = ''; loadCreds();
   }
   btn.textContent = 'Connect & Sync ☁️'; btn.disabled = false;
 }
 
-function showFbError(msg, type) {
-  let el = document.getElementById('fbErrorMsg');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'fbErrorMsg';
-    document.querySelector('#setupModal .modal-body').appendChild(el);
-  }
-  const isInfo = type === 'info';
-  el.style.cssText = 'margin-top:12px;padding:12px 14px;border-radius:8px;font-size:11px;line-height:1.8;white-space:pre-wrap;word-break:break-all;'
-    + (isInfo
-      ? 'background:rgba(92,200,255,0.07);border:1px solid rgba(92,200,255,0.2);color:var(--sky)'
-      : 'background:rgba(255,92,122,0.08);border:1px solid rgba(255,92,122,0.3);color:var(--rose)');
-  el.textContent = msg;
+// ─────────── DATA DEFAULTS ───────────
+function ensureDataShape(d){
+  if (!d.filters)       d.filters = {gate:'all',vlsi:'all',cpp:'all'};
+  if (!d.activeSection) d.activeSection = {gate:null,vlsi:null,cpp:null};
+  if (!d.diary)         d.diary = [];
+  if (!d.activity)      d.activity = {};
+  if (!d.completedDates)d.completedDates = {};
+  if (!d.resources)     d.resources = defaultResources();
+  if (!d.mocks)         d.mocks = [];
+  if (!d.tasks)         d.tasks = [];
+  if (!d.sections)      d.sections = {gate:[],vlsi:[],cpp:[]};
+  return d;
 }
-
-/* ── INIT ── */
-loadCreds();
-let D = loadLocal() || defaults();
-
-function defaults() {
+function defaults(){
   const today = new Date().toISOString().split('T')[0];
   const vlsiEnd = new Date(); vlsiEnd.setMonth(vlsiEnd.getMonth()+3);
-  return {
+  return ensureDataShape({
     tasks:[], sections:{
       gate:[
         {id:'sg1',name:'Engineering Maths',topics:14,deadline:'2026-03-31',domain:'gate'},
@@ -1694,7 +1597,7 @@ function defaults() {
     filters:{gate:'all',vlsi:'all',cpp:'all'},
     activeSection:{gate:null,vlsi:null,cpp:null},
     diary:[]
-  };
+  });
 }
 function defaultResources(){
   return [
@@ -1714,218 +1617,213 @@ function defaultResources(){
   ];
 }
 
+// ─────────── CONSTANTS ───────────
+const dColors  = {gate:'var(--lime)', vlsi:'var(--cyan)', cpp:'var(--amber)'};
+const dFills   = {gate:'pf-lime',     vlsi:'pf-cyan',     cpp:'pf-amber'};
+const dChecked = {gate:'checked',     vlsi:'checked-vlsi',cpp:'checked-cpp'};
+
+// ─────────── BOOTSTRAP DATA ───────────
+loadCreds();
+let D = ensureDataShape(loadLocal() || defaults());
 
 // ─────────── NAV ───────────
-function nav(page) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
-  if(page==='gate') renderSubject('gate');
-  if(page==='vlsi') renderSubject('vlsi');
-  if(page==='cpp')  renderSubject('cpp');
-  if(page==='mock') renderMock();
-  if(page==='resources') renderResources('all');
-  if(page==='diary') renderDiary();
+function nav(page){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector('.nav-item[data-page="' + page + '"]').classList.add('active');
+  if (page === 'gate')      renderSubject('gate');
+  if (page === 'vlsi')      renderSubject('vlsi');
+  if (page === 'cpp')       renderSubject('cpp');
+  if (page === 'mock')      renderMock();
+  if (page === 'resources') renderResources('all');
+  if (page === 'diary')     renderDiary();
 }
 
 // ─────────── MODAL ───────────
-function openModal(id, domain) {
+function openModal(id, domain){
   const today = new Date().toISOString().split('T')[0];
-  if(id==='taskModal'){
+  if (id === 'taskModal'){
     document.getElementById('tDomain').value = domain;
-    document.getElementById('taskModalTitle').textContent = 'Add Task — '+domain.toUpperCase();
-    document.getElementById('taskSaveBtn').className = `btn btn-${domain==='gate'?'lime':domain==='vlsi'?'cyan':'amber'}`;
-    document.getElementById('tName').value=''; document.getElementById('tNotes').value='';
-    document.getElementById('tDue').value=today;
-    const sel=document.getElementById('tSection');
-    sel.innerHTML='<option value="">— General —</option>';
-    (D.sections[domain]||[]).forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.name;sel.appendChild(o);});
+    document.getElementById('taskModalTitle').textContent = 'Add Task — ' + domain.toUpperCase();
+    document.getElementById('taskSaveBtn').className = 'btn btn-' + (domain==='gate'?'lime':domain==='vlsi'?'cyan':'amber');
+    document.getElementById('tName').value = ''; document.getElementById('tNotes').value = '';
+    document.getElementById('tDue').value = today;
+    const sel = document.getElementById('tSection');
+    sel.innerHTML = '<option value="">— General —</option>';
+    (D.sections[domain]||[]).forEach(s => {
+      const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; sel.appendChild(o);
+    });
   }
-  if(id==='secModal'){
-    document.getElementById('sDomain').value=domain;
-    ['sName','sDeadline','sTopics'].forEach(f=>document.getElementById(f).value='');
+  if (id === 'secModal'){
+    document.getElementById('sDomain').value = domain;
+    ['sName','sDeadline','sTopics'].forEach(f => document.getElementById(f).value = '');
   }
-  if(id==='mockModal'){
-    document.getElementById('mDate').value=today;
-    ['mName','mScore','mTime','mWeak','mNotes'].forEach(f=>document.getElementById(f).value='');
+  if (id === 'mockModal'){
+    document.getElementById('mDate').value = today;
+    ['mName','mScore','mTime','mWeak','mNotes'].forEach(f => document.getElementById(f).value = '');
   }
-  if(id==='resModal') ['rTitle','rDesc','rUrl'].forEach(f=>document.getElementById(f).value='');
+  if (id === 'resModal') ['rTitle','rDesc','rUrl'].forEach(f => document.getElementById(f).value = '');
   document.getElementById(id).classList.add('open');
 }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
 // ─────────── TASK CRUD ───────────
 function saveTask(){
-  const n=document.getElementById('tName').value.trim();
-  if(!n){toast('Task name required','te');return;}
-  const domain=document.getElementById('tDomain').value;
+  const n = document.getElementById('tName').value.trim();
+  if (!n){ toast('Task name required','te'); return; }
+  const domain = document.getElementById('tDomain').value;
   D.tasks.push({
-    id:'t'+Date.now(), name:n, domain,
-    section:document.getElementById('tSection').value,
-    type:document.getElementById('tType').value,
-    due:document.getElementById('tDue').value,
-    priority:document.getElementById('tPriority').value,
-    notes:document.getElementById('tNotes').value,
-    done:false, createdAt:new Date().toISOString(), completedAt:null
+    id: 't' + Date.now(), name: n, domain,
+    section:  document.getElementById('tSection').value,
+    type:     document.getElementById('tType').value,
+    due:      document.getElementById('tDue').value,
+    priority: document.getElementById('tPriority').value,
+    notes:    document.getElementById('tNotes').value,
+    done: false, createdAt: new Date().toISOString(), completedAt: null
   });
   save(D); closeModal('taskModal');
   toast('Task added ✓','ts');
   renderSubject(domain); refreshDash();
 }
-
 function toggleTask(id){
-  const t=D.tasks.find(x=>x.id===id); if(!t)return;
-  t.done=!t.done; t.completedAt=t.done?new Date().toISOString():null;
-  const dk=new Date().toISOString().split('T')[0];
-  if(t.done){ D.activity[dk]=(D.activity[dk]||0)+1; if(!D.completedDates[dk])D.completedDates[dk]=[]; D.completedDates[dk].push(id); }
-  else { if(D.activity[dk]>0)D.activity[dk]--; if(D.completedDates[dk])D.completedDates[dk]=D.completedDates[dk].filter(i=>i!==id); }
-  save(D);
-  renderSubject(t.domain); refreshDash();
+  const t = D.tasks.find(x => x.id === id); if (!t) return;
+  t.done = !t.done; t.completedAt = t.done ? new Date().toISOString() : null;
+  const dk = new Date().toISOString().split('T')[0];
+  if (t.done){
+    D.activity[dk] = (D.activity[dk]||0) + 1;
+    if (!D.completedDates[dk]) D.completedDates[dk] = [];
+    D.completedDates[dk].push(id);
+  } else {
+    if (D.activity[dk] > 0) D.activity[dk]--;
+    if (D.completedDates[dk]) D.completedDates[dk] = D.completedDates[dk].filter(i => i !== id);
+  }
+  save(D); renderSubject(t.domain); refreshDash();
 }
-
 function deleteTask(id){
-  const t=D.tasks.find(x=>x.id===id); if(!t)return;
-  D.tasks=D.tasks.filter(x=>x.id!==id); save(D);
+  const t = D.tasks.find(x => x.id === id); if (!t) return;
+  D.tasks = D.tasks.filter(x => x.id !== id); save(D);
   toast('Task deleted','ti'); renderSubject(t.domain); refreshDash();
 }
 
 // ─────────── SECTION CRUD ───────────
 function saveSection(){
-  const n=document.getElementById('sName').value.trim();
-  if(!n){toast('Name required','te');return;}
-  const dom=document.getElementById('sDomain').value;
-  if(!D.sections[dom])D.sections[dom]=[];
-  D.sections[dom].push({id:'s'+Date.now(),name:n,topics:parseInt(document.getElementById('sTopics').value)||5,deadline:document.getElementById('sDeadline').value,domain:dom});
+  const n = document.getElementById('sName').value.trim();
+  if (!n){ toast('Name required','te'); return; }
+  const dom = document.getElementById('sDomain').value;
+  if (!D.sections[dom]) D.sections[dom] = [];
+  D.sections[dom].push({
+    id: 's' + Date.now(), name: n,
+    topics: parseInt(document.getElementById('sTopics').value)||5,
+    deadline: document.getElementById('sDeadline').value, domain: dom
+  });
   save(D); closeModal('secModal'); toast('Section added ✓','ts');
   renderSubject(dom); refreshDash();
 }
-function deleteSection(domain,id){
-  D.sections[domain]=(D.sections[domain]||[]).filter(s=>s.id!==id);
-  D.tasks=D.tasks.filter(t=>t.section!==id); save(D);
+function deleteSection(domain, id){
+  D.sections[domain] = (D.sections[domain]||[]).filter(s => s.id !== id);
+  D.tasks = D.tasks.filter(t => t.section !== id); save(D);
   renderSubject(domain); refreshDash(); toast('Section removed','ti');
 }
 
 // ─────────── SUBJECT RENDER ───────────
-const dColors={gate:'var(--lime)',vlsi:'var(--cyan)',cpp:'var(--amber)'};
-const dFills={gate:'pf-lime',vlsi:'pf-cyan',cpp:'pf-amber'};
-const dChecked={gate:'checked',vlsi:'checked-vlsi',cpp:'checked-cpp'};
-
-function renderSubject(d){
-  renderSections(d); renderTasks(d); renderSubjectStats(d);
-  updateNavBadges();
-}
+function renderSubject(d){ renderSections(d); renderTasks(d); renderSubjectStats(d); updateNavBadges(); }
 
 function renderSections(d){
-  const cont=document.getElementById(d+'Sections');
-  const secs=D.sections[d]||[];
-  const active=D.activeSection[d];
-  document.getElementById(d+'SecCount').textContent=secs.length;
-  if(!secs.length){cont.innerHTML='<div style="padding:14px 16px;font-size:12px;color:var(--fog)">No sections yet</div>';return;}
-  cont.innerHTML=secs.map(s=>{
-    const tasks=D.tasks.filter(t=>t.domain===d&&t.section===s.id);
-    const done=tasks.filter(t=>t.done).length;
-    const pct=tasks.length?Math.round(done/tasks.length*100):0;
-    const isActive=active===s.id;
-    const actCls=d==='gate'?'active':d==='vlsi'?'active-vlsi':'active-cpp';
-    return `<div class="section-row ${isActive?actCls:''}" onclick="selectSection('${d}','${s.id}')">
-      <div style="flex:1;min-width:0">
-        <div class="sr-name">${s.name}</div>
-        <div class="sr-bar"><div class="sr-bar-fill ${dFills[d]}" style="width:${pct}%"></div></div>
-      </div>
-      <span class="sr-pct">${pct}%</span>
-      <button class="icon-btn del" onclick="event.stopPropagation();deleteSection('${d}','${s.id}')">🗑</button>
-    </div>`;
+  const cont   = document.getElementById(d + 'Sections');
+  const secs   = D.sections[d] || [];
+  const active = D.activeSection[d];
+  document.getElementById(d + 'SecCount').textContent = secs.length;
+  if (!secs.length){ cont.innerHTML = '<div style="padding:14px 16px;font-size:12px;color:var(--fog)">No sections yet</div>'; return; }
+  cont.innerHTML = secs.map(s => {
+    const tasks  = D.tasks.filter(t => t.domain === d && t.section === s.id);
+    const done   = tasks.filter(t => t.done).length;
+    const pct    = tasks.length ? Math.round(done/tasks.length*100) : 0;
+    const actCls = d==='gate' ? 'active' : d==='vlsi' ? 'active-vlsi' : 'active-cpp';
+    return '<div class="section-row ' + (active===s.id ? actCls : '') + '" onclick="selectSection(\'' + d + '\',\'' + s.id + '\')">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div class="sr-name">' + s.name + '</div>'
+      + '<div class="sr-bar"><div class="sr-bar-fill ' + dFills[d] + '" style="width:' + pct + '%"></div></div>'
+      + '</div>'
+      + '<span class="sr-pct">' + pct + '%</span>'
+      + '<button class="icon-btn del" onclick="event.stopPropagation();deleteSection(\'' + d + '\',\'' + s.id + '\')">🗑</button>'
+      + '</div>';
   }).join('');
 }
-
-function selectSection(d,id){
-  D.activeSection[d]=D.activeSection[d]===id?null:id;
-  D.filters[d]='all'; save(D);
+function selectSection(d, id){
+  D.activeSection[d] = D.activeSection[d] === id ? null : id;
+  D.filters[d] = 'all'; save(D);
   renderSubject(d);
-  const sec=D.activeSection[d]?(D.sections[d]||[]).find(s=>s.id===id):null;
-  document.getElementById(d+'TPTitle').textContent=sec?sec.name:'All Tasks';
+  const sec = D.activeSection[d] ? (D.sections[d]||[]).find(s => s.id === id) : null;
+  document.getElementById(d + 'TPTitle').textContent = sec ? sec.name : 'All Tasks';
 }
-
-function setFilter(d,f,el){
-  D.filters[d]=f; D.activeSection[d]=null; save(D);
-  el.closest('.tp-tabs').querySelectorAll('.tp-tab').forEach(t=>t.classList.remove('active'));
+function setFilter(d, f, el){
+  D.filters[d] = f; D.activeSection[d] = null; save(D);
+  el.closest('.tp-tabs').querySelectorAll('.tp-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById(d+'TPTitle').textContent=f.charAt(0).toUpperCase()+f.slice(1)+' Tasks';
+  document.getElementById(d + 'TPTitle').textContent = f.charAt(0).toUpperCase() + f.slice(1) + ' Tasks';
   renderTasks(d); renderSections(d);
 }
-
 function renderTasks(d){
-  const cont=document.getElementById(d+'TaskList');
-  const f=D.filters[d]||'all';
-  const activeSec=D.activeSection[d];
-  const today=new Date().toISOString().split('T')[0];
-  let tasks=D.tasks.filter(t=>t.domain===d);
-  if(activeSec) tasks=tasks.filter(t=>t.section===activeSec);
+  const cont = document.getElementById(d + 'TaskList');
+  const f    = D.filters[d] || 'all';
+  const activeSec = D.activeSection[d];
+  const today = new Date().toISOString().split('T')[0];
+  let tasks = D.tasks.filter(t => t.domain === d);
+  if (activeSec) tasks = tasks.filter(t => t.section === activeSec);
   else {
-    if(f==='daily')   tasks=tasks.filter(t=>t.type==='daily');
-    else if(f==='weekly')  tasks=tasks.filter(t=>t.type==='weekly');
-    else if(f==='monthly') tasks=tasks.filter(t=>t.type==='monthly');
-    else if(f==='pending') tasks=tasks.filter(t=>!t.done&&t.due&&t.due<today);
+    if      (f === 'daily')   tasks = tasks.filter(t => t.type === 'daily');
+    else if (f === 'weekly')  tasks = tasks.filter(t => t.type === 'weekly');
+    else if (f === 'monthly') tasks = tasks.filter(t => t.type === 'monthly');
+    else if (f === 'pending') tasks = tasks.filter(t => !t.done && t.due && t.due < today);
   }
-  tasks.sort((a,b)=>{if(a.done!==b.done)return a.done?1:-1;if(a.due&&b.due)return a.due.localeCompare(b.due);return 0;});
-  if(!tasks.length){
-    cont.innerHTML=`<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">${f==='pending'?'No overdue tasks!':'No tasks here yet'}</div><button class="btn btn-ghost btn-sm" onclick="openModal('taskModal','${d}')">+ Add Task</button></div>`;
+  tasks.sort((a,b) => { if (a.done !== b.done) return a.done ? 1 : -1; if (a.due && b.due) return a.due.localeCompare(b.due); return 0; });
+  if (!tasks.length){
+    cont.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">'
+      + (f==='pending' ? 'No overdue tasks!' : 'No tasks here yet')
+      + '</div><button class="btn btn-ghost btn-sm" onclick="openModal(\'taskModal\',\'' + d + '\')">+ Add Task</button></div>';
     return;
   }
-  const ck=dChecked[d];
-  cont.innerHTML=tasks.map(t=>{
-    const sec=t.section?(D.sections[d]||[]).find(s=>s.id===t.section):null;
-    const overdue=!t.done&&t.due&&t.due<today;
-    return `<div class="task-row ${t.done?'done':''}">
-      <div class="tcb ${t.done?ck:''}" onclick="toggleTask('${t.id}')"></div>
-      <div class="tr-body">
-        <div class="tr-name">${t.name}</div>
-        <div class="tr-meta">
-          <span class="chip chip-${t.type}">${t.type}</span>
-          ${sec?`<span class="chip chip-sec">${sec.name}</span>`:''}
-          ${t.priority==='high'?'<span class="chip chip-high">🔴 HIGH</span>':''}
-          ${overdue?'<span class="chip chip-overdue">⚠️ OVERDUE</span>':''}
-          ${t.done?'<span class="chip chip-done">✓ done</span>':''}
-          ${t.due?`<span class="chip-date">${overdue?'⚠️ ':''} ${fmtDate(t.due)}</span>`:''}
-        </div>
-        ${t.notes?`<div style="font-size:11px;color:var(--fog);margin-top:4px">${t.notes}</div>`:''}
-      </div>
-      <div class="tr-actions">
-        <button class="icon-btn del" onclick="deleteTask('${t.id}')">🗑</button>
-      </div>
-    </div>`;
+  const ck = dChecked[d];
+  cont.innerHTML = tasks.map(t => {
+    const sec     = t.section ? (D.sections[d]||[]).find(s => s.id === t.section) : null;
+    const overdue = !t.done && t.due && t.due < today;
+    return '<div class="task-row ' + (t.done ? 'done' : '') + '">'
+      + '<div class="tcb ' + (t.done ? ck : '') + '" onclick="toggleTask(\'' + t.id + '\')"></div>'
+      + '<div class="tr-body">'
+      + '<div class="tr-name">' + t.name + '</div>'
+      + '<div class="tr-meta">'
+      + '<span class="chip chip-' + t.type + '">' + t.type + '</span>'
+      + (sec ? '<span class="chip chip-sec">' + sec.name + '</span>' : '')
+      + (t.priority === 'high' ? '<span class="chip chip-high">🔴 HIGH</span>' : '')
+      + (overdue ? '<span class="chip chip-overdue">⚠️ OVERDUE</span>' : '')
+      + (t.done  ? '<span class="chip chip-done">✓ done</span>' : '')
+      + (t.due   ? '<span class="chip-date">' + (overdue?'⚠️ ':'') + fmtDate(t.due) + '</span>' : '')
+      + '</div>'
+      + (t.notes ? '<div style="font-size:11px;color:var(--fog);margin-top:4px">' + t.notes + '</div>' : '')
+      + '</div>'
+      + '<div class="tr-actions"><button class="icon-btn del" onclick="deleteTask(\'' + t.id + '\')">🗑</button></div>'
+      + '</div>';
   }).join('');
 }
-
 function renderSubjectStats(d){
-  const cont=document.getElementById(d+'Stats');
-  const tasks=D.tasks.filter(t=>t.domain===d);
-  const done=tasks.filter(t=>t.done).length;
-  const today=new Date().toISOString().split('T')[0];
-  const overdue=tasks.filter(t=>!t.done&&t.due&&t.due<today).length;
-  const todayT=tasks.filter(t=>t.due===today);
-  const pct=tasks.length?Math.round(done/tasks.length*100):0;
-  const c=dColors[d]; const f=dFills[d];
-  cont.innerHTML=`
-    <div class="stat-tile st-${d==='gate'?'gate':d==='vlsi'?'vlsi':'cpp'}">
-      <div class="stat-num" style="color:${c}">${pct}%</div>
-      <div class="stat-label">Progress</div>
-      <div class="pbar"><div class="pbar-fill ${f}" style="width:${pct}%"></div></div>
-    </div>
-    <div class="stat-tile">
-      <div class="stat-num" style="color:${c}">${done}/${tasks.length}</div>
-      <div class="stat-label">Tasks Done</div>
-    </div>
-    <div class="stat-tile">
-      <div class="stat-num" style="color:var(--rose)">${overdue}</div>
-      <div class="stat-label">Overdue</div>
-    </div>
-    <div class="stat-tile">
-      <div class="stat-num" style="color:var(--amber)">${todayT.filter(t=>t.done).length}/${todayT.length||0}</div>
-      <div class="stat-label">Today's Tasks</div>
-    </div>`;
+  const cont  = document.getElementById(d + 'Stats');
+  const tasks = D.tasks.filter(t => t.domain === d);
+  const done  = tasks.filter(t => t.done).length;
+  const today = new Date().toISOString().split('T')[0];
+  const overdue = tasks.filter(t => !t.done && t.due && t.due < today).length;
+  const todayT  = tasks.filter(t => t.due === today);
+  const pct = tasks.length ? Math.round(done/tasks.length*100) : 0;
+  const c = dColors[d]; const f = dFills[d];
+  cont.innerHTML =
+    '<div class="stat-tile st-' + d + '">'
+    + '<div class="stat-num" style="color:' + c + '">' + pct + '%</div>'
+    + '<div class="stat-label">Progress</div>'
+    + '<div class="pbar"><div class="pbar-fill ' + f + '" style="width:' + pct + '%"></div></div>'
+    + '</div>'
+    + '<div class="stat-tile"><div class="stat-num" style="color:' + c + '">' + done + '/' + tasks.length + '</div><div class="stat-label">Tasks Done</div></div>'
+    + '<div class="stat-tile"><div class="stat-num" style="color:var(--rose)">' + overdue + '</div><div class="stat-label">Overdue</div></div>'
+    + '<div class="stat-tile"><div class="stat-num" style="color:var(--amber)">' + todayT.filter(t=>t.done).length + '/' + (todayT.length||0) + '</div><div class="stat-label">Today\'s Tasks</div></div>';
 }
 
 // ─────────── DASHBOARD ───────────
@@ -1934,555 +1832,411 @@ function refreshDash(){
   updateWeekChart(); updateTimeline(); updatePending();
   updateStreakCal(); updateStreakStats(); updateNavBadges();
 }
-
 function updateDeadlines(){
-  const today=new Date(); today.setHours(0,0,0,0);
-  const diff=d=>Math.max(0,Math.round((d-today)/86400000));
-  const gate27=new Date('2027-02-01');
-  const syllabus=new Date('2026-08-31');
-  const vlsiEnd=new Date(D.vlsiStart); vlsiEnd.setMonth(vlsiEnd.getMonth()+3);
-  const todayStr=today.toISOString().split('T')[0];
-  const pendingToday=D.tasks.filter(t=>!t.done&&t.due===todayStr).length;
-  document.getElementById('deadlineRow').innerHTML=`
-    <div class="dl-card"><div class="dl-num" style="color:var(--lime)">${diff(gate27)}</div><div class="dl-label">Days to GATE 2027</div></div>
-    <div class="dl-card"><div class="dl-num" style="color:var(--amber)">${diff(syllabus)}</div><div class="dl-label">Days to Aug 31 Deadline</div></div>
-    <div class="dl-card"><div class="dl-num" style="color:var(--cyan)">${diff(vlsiEnd)}</div><div class="dl-label">Days to VLSI Target</div></div>
-    <div class="dl-card"><div class="dl-num" style="color:var(--rose)">${pendingToday}</div><div class="dl-label">Today's Pending Tasks</div></div>`;
-  document.getElementById('vlsiSubtitle').textContent=`3-month intensive — target: ${fmtDate(vlsiEnd.toISOString().split('T')[0])}`;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff  = d => Math.max(0, Math.round((d-today)/86400000));
+  const gate27   = new Date('2027-02-01');
+  const syllabus = new Date('2026-08-31');
+  const vlsiEnd  = new Date(D.vlsiStart||new Date().toISOString().split('T')[0]);
+  vlsiEnd.setMonth(vlsiEnd.getMonth()+3);
+  const todayStr = today.toISOString().split('T')[0];
+  const pendingToday = D.tasks.filter(t => !t.done && t.due === todayStr).length;
+  document.getElementById('deadlineRow').innerHTML =
+    '<div class="dl-card"><div class="dl-num" style="color:var(--lime)">'   + diff(gate27)   + '</div><div class="dl-label">Days to GATE 2027</div></div>'
+  + '<div class="dl-card"><div class="dl-num" style="color:var(--amber)">'  + diff(syllabus) + '</div><div class="dl-label">Days to Aug 31 Deadline</div></div>'
+  + '<div class="dl-card"><div class="dl-num" style="color:var(--cyan)">'   + diff(vlsiEnd)  + '</div><div class="dl-label">Days to VLSI Target</div></div>'
+  + '<div class="dl-card"><div class="dl-num" style="color:var(--rose)">'   + pendingToday   + '</div><div class="dl-label">Today\'s Pending Tasks</div></div>';
+  const vlsiSub = document.getElementById('vlsiSubtitle');
+  if (vlsiSub) vlsiSub.textContent = '3-month intensive — target: ' + fmtDate(vlsiEnd.toISOString().split('T')[0]);
 }
-
-function calcProg(d){
-  const t=D.tasks.filter(x=>x.domain===d);
-  const done=t.filter(x=>x.done).length;
-  return {done,total:t.length,pct:t.length?Math.round(done/t.length*100):0};
-}
-
+function calcProg(d){ const t = D.tasks.filter(x=>x.domain===d); const done=t.filter(x=>x.done).length; return {done,total:t.length,pct:t.length?Math.round(done/t.length*100):0}; }
 function getPace(d){
-  const {pct}=calcProg(d);
-  const today=new Date(); today.setHours(0,0,0,0);
-  const ends={gate:new Date('2026-08-31'),vlsi:null,cpp:null};
-  if(d==='vlsi'){const e=new Date(D.vlsiStart);e.setMonth(e.getMonth()+3);ends.vlsi=e;}
-  const deadline=ends[d]; if(!deadline)return{label:'⏱ In Progress',cls:'pace-on'};
-  const start=new Date('2026-01-01');
-  const total=Math.max(1,(deadline-start)/86400000);
-  const elapsed=Math.max(0,(today-start)/86400000);
-  const exp=Math.min(100,Math.round(elapsed/total*100));
-  if(pct>=exp+10)return{label:'🚀 Ahead',cls:'pace-ahead'};
-  if(pct>=exp-10)return{label:'✅ On Track',cls:'pace-on'};
-  return{label:'⚠️ Behind',cls:'pace-behind'};
+  const {pct} = calcProg(d);
+  const today  = new Date(); today.setHours(0,0,0,0);
+  const ends   = {gate:new Date('2026-08-31'), vlsi:null, cpp:null};
+  if (d==='vlsi'){ const e=new Date(D.vlsiStart||new Date().toISOString().split('T')[0]); e.setMonth(e.getMonth()+3); ends.vlsi=e; }
+  const deadline = ends[d]; if (!deadline) return {label:'⏱ In Progress',cls:'pace-on'};
+  const start    = new Date('2026-01-01');
+  const total    = Math.max(1,(deadline-start)/86400000);
+  const elapsed  = Math.max(0,(today-start)/86400000);
+  const exp      = Math.min(100,Math.round(elapsed/total*100));
+  if (pct >= exp+10) return {label:'🚀 Ahead',   cls:'pace-ahead'};
+  if (pct >= exp-10) return {label:'✅ On Track', cls:'pace-on'};
+  return {label:'⚠️ Behind', cls:'pace-behind'};
 }
-
 function updateHeroStats(){
-  const el=document.getElementById('heroStats');
-  el.innerHTML=['gate','vlsi','cpp'].map(d=>{
-    const {done,total,pct}=calcProg(d);
-    const p=getPace(d);
-    const c=dColors[d]; const f=dFills[d];
-    const n={gate:'GATE EC',vlsi:'VLSI Jobs',cpp:'C++ Mastery'};
-    return `<div class="stat-tile st-${d}">
-      <div class="stat-label" style="margin-bottom:8px">${n[d]}</div>
-      <div class="stat-num" style="color:${c};font-size:40px">${pct}%</div>
-      <div style="font-size:12px;color:var(--mist);margin:4px 0">${done}/${total} tasks</div>
-      <div class="pbar"><div class="pbar-fill ${f}" style="width:${pct}%"></div></div>
-      <div class="pace ${p.cls}" style="margin-top:8px">${p.label}</div>
-    </div>`;
+  document.getElementById('heroStats').innerHTML = ['gate','vlsi','cpp'].map(d => {
+    const {done,total,pct} = calcProg(d);
+    const p = getPace(d); const c = dColors[d]; const f = dFills[d];
+    const n = {gate:'GATE EC', vlsi:'VLSI Jobs', cpp:'C++ Mastery'};
+    return '<div class="stat-tile st-' + d + '">'
+      + '<div class="stat-label" style="margin-bottom:8px">' + n[d] + '</div>'
+      + '<div class="stat-num" style="color:' + c + ';font-size:40px">' + pct + '%</div>'
+      + '<div style="font-size:12px;color:var(--mist);margin:4px 0">' + done + '/' + total + ' tasks</div>'
+      + '<div class="pbar"><div class="pbar-fill ' + f + '" style="width:' + pct + '%"></div></div>'
+      + '<div class="pace ' + p.cls + '" style="margin-top:8px">' + p.label + '</div>'
+      + '</div>';
   }).join('');
 }
-
 function updateTodayTasks(){
-  const today=new Date().toISOString().split('T')[0];
-  const el=document.getElementById('todayTasksList');
-  document.getElementById('todayDate').textContent=fmtDate(today);
-  document.getElementById('todayDate2').textContent=today;
-  const tasks=D.tasks.filter(t=>t.due===today);
-  if(!tasks.length){el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">🌅</div><div class="empty-text">No tasks due today — add some!</div></div>';return;}
-  el.innerHTML=`<div style="max-height:220px;overflow-y:auto">` + tasks.map(t=>{
-    const c=dColors[t.domain];
-    const ck=dChecked[t.domain];
-    return `<div class="task-row ${t.done?'done':''}" style="padding:10px 14px">
-      <div class="tcb ${t.done?ck:''}" onclick="toggleTask('${t.id}')"></div>
-      <div class="tr-body">
-        <div class="tr-name" style="font-size:12px">${t.name}</div>
-        <div class="tr-meta">
-          <span class="chip" style="background:${c}18;color:${c}">${t.domain.toUpperCase()}</span>
-          <span class="chip chip-${t.type}">${t.type}</span>
-        </div>
-      </div>
-    </div>`;
-  }).join('') + `</div>`;
+  const today = new Date().toISOString().split('T')[0];
+  const el    = document.getElementById('todayTasksList');
+  const dateEl = document.getElementById('todayDate');
+  const date2El = document.getElementById('todayDate2');
+  if (dateEl)  dateEl.textContent  = fmtDate(today);
+  if (date2El) date2El.textContent = today;
+  const tasks = D.tasks.filter(t => t.due === today);
+  if (!tasks.length){ el.innerHTML = '<div class="empty" style="padding:20px"><div class="empty-icon">🌅</div><div class="empty-text">No tasks due today — add some!</div></div>'; return; }
+  el.innerHTML = '<div style="max-height:220px;overflow-y:auto">' + tasks.map(t => {
+    const c = dColors[t.domain]; const ck = dChecked[t.domain];
+    return '<div class="task-row ' + (t.done?'done':'') + '" style="padding:10px 14px">'
+      + '<div class="tcb ' + (t.done?ck:'') + '" onclick="toggleTask(\'' + t.id + '\')"></div>'
+      + '<div class="tr-body"><div class="tr-name" style="font-size:12px">' + t.name + '</div>'
+      + '<div class="tr-meta"><span class="chip" style="background:' + c + '18;color:' + c + '">' + t.domain.toUpperCase() + '</span>'
+      + '<span class="chip chip-' + t.type + '">' + t.type + '</span></div></div></div>';
+  }).join('') + '</div>';
 }
-
 function updateWeekChart(){
-  const today=new Date(); today.setHours(0,0,0,0);
-  const days=[]; for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);days.push(d);}
-  const counts=days.map(d=>D.activity[d.toISOString().split('T')[0]]||0);
-  const maxC=Math.max(...counts,1);
-  const todayStr=today.toISOString().split('T')[0];
-  const el=document.getElementById('weekChart');
-  el.innerHTML=days.map((d,i)=>{
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days = []; for (let i=6;i>=0;i--){ const d=new Date(today); d.setDate(d.getDate()-i); days.push(d); }
+  const counts = days.map(d => D.activity[d.toISOString().split('T')[0]]||0);
+  const maxC   = Math.max(...counts,1);
+  const todayStr = today.toISOString().split('T')[0];
+  document.getElementById('weekChart').innerHTML = days.map((d,i) => {
     const c=counts[i]; const h=Math.round((c/maxC)*52)+4;
     const ds=d.toISOString().split('T')[0];
-    const isToday=ds===todayStr;
     const dow=d.toLocaleDateString('en',{weekday:'short'}).slice(0,2);
-    return `<div class="wb-wrap"><div class="wb ${c>0?'active':''} ${isToday?'today':''}" style="height:${h}px"></div><span class="wb-label">${dow}</span></div>`;
+    return '<div class="wb-wrap"><div class="wb ' + (c>0?'active':'') + ' ' + (ds===todayStr?'today':'') + '" style="height:' + h + 'px"></div><span class="wb-label">' + dow + '</span></div>';
   }).join('');
-  const wk=counts.reduce((a,b)=>a+b,0);
-  document.getElementById('wkTotal').textContent=wk;
-  const mo=new Date(today.getFullYear(),today.getMonth(),1).toISOString().split('T')[0];
-  let moT=0; Object.entries(D.activity).forEach(([k,v])=>{if(k>=mo)moT+=v;});
-  document.getElementById('moTotal').textContent=moT;
-  let all=0; Object.values(D.activity).forEach(v=>all+=v);
-  document.getElementById('allTotal').textContent=all;
+  const wk = counts.reduce((a,b)=>a+b,0);
+  document.getElementById('wkTotal').textContent = wk;
+  const mo = new Date(today.getFullYear(),today.getMonth(),1).toISOString().split('T')[0];
+  let moT = 0; Object.entries(D.activity).forEach(([k,v]) => { if (k>=mo) moT+=v; });
+  document.getElementById('moTotal').textContent = moT;
+  let all = 0; Object.values(D.activity).forEach(v => all+=v);
+  document.getElementById('allTotal').textContent = all;
 }
-
 function updateTimeline(){
-  const el=document.getElementById('timelineEl');
-  const today=new Date().toISOString().split('T')[0];
-  let items=[];
-  ['gate','vlsi','cpp'].forEach(d=>{
-    (D.sections[d]||[]).filter(s=>s.deadline).forEach(s=>items.push({...s,domain:d}));
-  });
-  items.sort((a,b)=>a.deadline.localeCompare(b.deadline));
-  if(!items.length){el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">🗺️</div><div class="empty-text">Add sections with deadlines to see timeline</div></div>';return;}
-  const dLabel={gate:'GATE EC',vlsi:'VLSI',cpp:'C++'};
-  el.innerHTML='<div class="timeline-list">'+items.slice(0,10).map(s=>{
-    const tasks=D.tasks.filter(t=>t.domain===s.domain&&t.section===s.id);
-    const done=tasks.filter(t=>t.done).length;
-    const pct=tasks.length?Math.round(done/tasks.length*100):0;
-    const isDone=pct===100;
-    const isCurrent=!isDone&&s.deadline>=today;
-    const c=dColors[s.domain];
-    return `<div class="tl-row">
-      <div class="tl-dot ${isDone?'tl-done':isCurrent?'tl-current':''}"></div>
-      <div class="tl-content">
-        <div class="tl-name" style="color:${c}">${s.name} <span style="font-size:10px;color:var(--fog);font-weight:400">${dLabel[s.domain]}</span></div>
-        <div class="tl-meta">📅 ${fmtDate(s.deadline)} · ${done}/${tasks.length} tasks · ${pct}%</div>
-        <div class="tl-pbar"><div style="height:100%;border-radius:2px;background:${c};width:${pct}%"></div></div>
-      </div>
-    </div>`;
-  }).join('')+'</div>';
+  const el    = document.getElementById('timelineEl');
+  const today = new Date().toISOString().split('T')[0];
+  let items = [];
+  ['gate','vlsi','cpp'].forEach(d => { (D.sections[d]||[]).filter(s=>s.deadline).forEach(s=>items.push({...s,domain:d})); });
+  items.sort((a,b) => a.deadline.localeCompare(b.deadline));
+  if (!items.length){ el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">🗺️</div><div class="empty-text">Add sections with deadlines to see timeline</div></div>'; return; }
+  const dLabel = {gate:'GATE EC', vlsi:'VLSI', cpp:'C++'};
+  el.innerHTML = '<div class="timeline-list">' + items.slice(0,10).map(s => {
+    const tasks = D.tasks.filter(t=>t.domain===s.domain&&t.section===s.id);
+    const done  = tasks.filter(t=>t.done).length;
+    const pct   = tasks.length ? Math.round(done/tasks.length*100) : 0;
+    const isDone = pct===100; const isCurrent = !isDone && s.deadline>=today;
+    const c = dColors[s.domain];
+    return '<div class="tl-row"><div class="tl-dot ' + (isDone?'tl-done':isCurrent?'tl-current':'') + '"></div>'
+      + '<div class="tl-content">'
+      + '<div class="tl-name" style="color:' + c + '">' + s.name + ' <span style="font-size:10px;color:var(--fog);font-weight:400">' + dLabel[s.domain] + '</span></div>'
+      + '<div class="tl-meta">📅 ' + fmtDate(s.deadline) + ' · ' + done + '/' + tasks.length + ' tasks · ' + pct + '%</div>'
+      + '<div class="tl-pbar"><div style="height:100%;border-radius:2px;background:' + c + ';width:' + pct + '%"></div></div>'
+      + '</div></div>';
+  }).join('') + '</div>';
 }
-
 function updatePending(){
-  const el=document.getElementById('pendingCloud');
-  const today=new Date().toISOString().split('T')[0];
-  const overdue=D.tasks.filter(t=>!t.done&&t.due&&t.due<today);
-  const soon=D.tasks.filter(t=>{
-    if(t.done||!t.due)return false;
-    const diff=(new Date(t.due)-new Date(today))/86400000;
-    return diff>=0&&diff<=3;
-  });
-  if(!overdue.length&&!soon.length){el.innerHTML='<div style="color:var(--fog);font-size:13px;padding:4px">All clear! No overdue topics 🎉</div>';return;}
-  el.innerHTML=[...overdue.slice(0,6).map(t=>`<span class="pending-chip overdue">⚠️ ${t.name}</span>`),
-    ...soon.slice(0,6).map(t=>`<span class="pending-chip soon">🕐 ${t.name}</span>`)].join('');
+  const el    = document.getElementById('pendingCloud');
+  const today = new Date().toISOString().split('T')[0];
+  const overdue = D.tasks.filter(t=>!t.done&&t.due&&t.due<today);
+  const soon    = D.tasks.filter(t=>{ if(t.done||!t.due)return false; const diff=(new Date(t.due)-new Date(today))/86400000; return diff>=0&&diff<=3; });
+  if (!overdue.length && !soon.length){ el.innerHTML='<div style="color:var(--fog);font-size:13px;padding:4px">All clear! No overdue topics 🎉</div>'; return; }
+  el.innerHTML = [...overdue.slice(0,6).map(t=>'<span class="pending-chip overdue">⚠️ '+t.name+'</span>'),
+                  ...soon.slice(0,6).map(t=>'<span class="pending-chip soon">🕐 '+t.name+'</span>')].join('');
 }
-
 function updateStreakCal(){
-  const el=document.getElementById('calMonths');
-  const today=new Date(); today.setHours(0,0,0,0);
-  const yr=new Date(today); yr.setFullYear(yr.getFullYear()-1);
-  const months={}; const cur=new Date(yr);
-  while(cur<=today){
-    const k=cur.toISOString().slice(0,7);
-    if(!months[k])months[k]=[];
+  const el    = document.getElementById('calMonths');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yr    = new Date(today); yr.setFullYear(yr.getFullYear()-1);
+  const months = {}; const cur = new Date(yr);
+  while (cur <= today){
+    const k = cur.toISOString().slice(0,7);
+    if (!months[k]) months[k] = [];
     months[k].push(new Date(cur));
     cur.setDate(cur.getDate()+1);
   }
-  const todayStr=today.toISOString().split('T')[0];
-  el.innerHTML=Object.entries(months).map(([m,days])=>{
-    const [y,mo]=m.split('-');
-    const lbl=new Date(y,mo-1,1).toLocaleDateString('en',{month:'short',year:'2-digit'});
-    return `<div class="cal-month">
-      <div class="cal-mlabel">${lbl}</div>
-      <div class="cal-grid">${days.map(d=>{
-        const ds=d.toISOString().split('T')[0];
-        const cnt=D.activity[ds]||0;
-        const allT=D.tasks.filter(t=>t.due===ds).length;
-        let cls='cal-cell';
-        if(cnt>0&&allT>0&&cnt>=allT)cls+=' full-day';
-        else if(cnt>0)cls+=' has-tasks';
-        if(ds===todayStr)cls+=' today-cell';
-        return `<div class="${cls}" title="${ds}: ${cnt} completed"></div>`;
-      }).join('')}</div>
-    </div>`;
+  const todayStr = today.toISOString().split('T')[0];
+  el.innerHTML = Object.entries(months).map(([m,days]) => {
+    const [y,mo] = m.split('-');
+    const lbl = new Date(y, mo-1, 1).toLocaleDateString('en',{month:'short',year:'2-digit'});
+    return '<div class="cal-month"><div class="cal-mlabel">' + lbl + '</div><div class="cal-grid">'
+      + days.map(d => {
+          const ds  = d.toISOString().split('T')[0];
+          const cnt = D.activity[ds]||0;
+          const allT= D.tasks.filter(t=>t.due===ds).length;
+          let cls = 'cal-cell';
+          if (cnt>0 && allT>0 && cnt>=allT) cls += ' full-day';
+          else if (cnt>0) cls += ' has-tasks';
+          if (ds===todayStr) cls += ' today-cell';
+          return '<div class="' + cls + '" title="' + ds + ': ' + cnt + ' completed"></div>';
+        }).join('')
+      + '</div></div>';
   }).join('');
 }
-
 function updateStreakStats(){
-  const today=new Date(); today.setHours(0,0,0,0);
-  const todayStr=today.toISOString().split('T')[0];
-  let cur=0;
-  if((D.activity[todayStr]||0)>0){
-    cur=1; const t=new Date(today); t.setDate(t.getDate()-1);
-    while((D.activity[t.toISOString().split('T')[0]]||0)>0){cur++;t.setDate(t.getDate()-1);}
+  const today    = new Date(); today.setHours(0,0,0,0);
+  const todayStr = today.toISOString().split('T')[0];
+  let cur = 0;
+  if ((D.activity[todayStr]||0) > 0){
+    cur = 1; const t = new Date(today); t.setDate(t.getDate()-1);
+    while ((D.activity[t.toISOString().split('T')[0]]||0) > 0){ cur++; t.setDate(t.getDate()-1); }
   }
-  let max=0,tmp=0,active=0;
-  const yr=new Date(today); yr.setFullYear(yr.getFullYear()-1);
-  const d=new Date(yr);
-  while(d<=today){
-    const ds=d.toISOString().split('T')[0];
-    if((D.activity[ds]||0)>0){tmp++;active++;if(tmp>max)max=tmp;}else tmp=0;
+  let max=0, tmp=0, active=0;
+  const yr = new Date(today); yr.setFullYear(yr.getFullYear()-1);
+  const d  = new Date(yr);
+  while (d <= today){
+    const ds = d.toISOString().split('T')[0];
+    if ((D.activity[ds]||0) > 0){ tmp++; active++; if (tmp>max) max=tmp; } else tmp=0;
     d.setDate(d.getDate()+1);
   }
-  document.getElementById('curStreak').textContent=cur;
-  document.getElementById('maxStreak').textContent=max;
-  document.getElementById('actDays').textContent=active;
-  document.getElementById('streakPill').textContent=cur+' day streak';
+  document.getElementById('curStreak').textContent  = cur;
+  document.getElementById('maxStreak').textContent  = max;
+  document.getElementById('actDays').textContent    = active;
+  document.getElementById('streakPill').textContent = cur + ' day streak';
 }
-
 function updateNavBadges(){
-  ['gate','vlsi','cpp'].forEach(d=>{
-    const t=D.tasks.filter(x=>x.domain===d&&!x.done).length;
-    document.getElementById('nb-'+d).textContent=t;
+  ['gate','vlsi','cpp'].forEach(d => {
+    const t = D.tasks.filter(x=>x.domain===d&&!x.done).length;
+    document.getElementById('nb-'+d).textContent = t;
   });
 }
 
 // ─────────── MOCK TEST ───────────
 function saveMock(){
-  const n=document.getElementById('mName').value.trim();
-  const s=parseFloat(document.getElementById('mScore').value);
-  if(!n||isNaN(s)){toast('Name and score required','te');return;}
-  if(s<0||s>100){toast('Score must be 0–100','te');return;}
-  D.mocks.push({id:'m'+Date.now(),name:n,score:s,
-    date:document.getElementById('mDate').value,
-    platform:document.getElementById('mPlatform').value,
-    time:document.getElementById('mTime').value,
-    weak:document.getElementById('mWeak').value,
-    notes:document.getElementById('mNotes').value
+  const n = document.getElementById('mName').value.trim();
+  const s = parseFloat(document.getElementById('mScore').value);
+  if (!n||isNaN(s)){ toast('Name and score required','te'); return; }
+  if (s<0||s>100){ toast('Score must be 0–100','te'); return; }
+  D.mocks.push({ id:'m'+Date.now(), name:n, score:s,
+    date:     document.getElementById('mDate').value,
+    platform: document.getElementById('mPlatform').value,
+    time:     document.getElementById('mTime').value,
+    weak:     document.getElementById('mWeak').value,
+    notes:    document.getElementById('mNotes').value
   });
   D.mocks.sort((a,b)=>a.date.localeCompare(b.date));
   save(D); closeModal('mockModal'); toast('Mock test logged ✓','ts'); renderMock();
 }
-
-function deleteMock(id){D.mocks=D.mocks.filter(m=>m.id!==id);save(D);renderMock();toast('Removed','ti');}
-
-function estRank(s){
-  if(s>=90)return{r:'< 100',note:'🏆 Top 0.1% — Exceptional!'};
-  if(s>=80)return{r:'100–500',note:'⭐ Top 0.5% — Excellent'};
-  if(s>=70)return{r:'500–1,500',note:'✅ Top 1.5% — Very Good'};
-  if(s>=60)return{r:'1,500–4,000',note:'👍 Top 4% — Good'};
-  if(s>=50)return{r:'4,000–9,000',note:'📈 Average — keep pushing'};
-  if(s>=40)return{r:'9,000–18,000',note:'⚠️ Below average'};
-  if(s>=30)return{r:'18,000–30,000',note:'❗ Needs improvement'};
-  return{r:'30,000+',note:'🌱 Early stage — keep going!'};
-}
-
+function deleteMock(id){ D.mocks=D.mocks.filter(m=>m.id!==id); save(D); renderMock(); toast('Removed','ti'); }
 function renderMock(){
-  const mocks=D.mocks;
-  const el=document.getElementById('mockStats');
-  if(!mocks.length){
-    el.innerHTML='<div class="stat-tile"><div class="stat-num" style="color:var(--fog)">—</div><div class="stat-label">Best Score</div></div>'.repeat(4);
-    document.getElementById('mockList').innerHTML='<div class="empty"><div class="empty-icon">📝</div><div class="empty-text">No mock tests logged yet</div><button class="btn btn-rose btn-sm" onclick="openModal(\'mockModal\')">+ Log First Test</button></div>';
-    document.getElementById('estRank').textContent='—';
-    document.getElementById('estRankNote').textContent='Add mock tests to estimate rank';
-    drawScoreChart([]);return;
+  const mocks = D.mocks;
+  const best  = mocks.length ? Math.max(...mocks.map(m=>m.score)) : 0;
+  const avg   = mocks.length ? Math.round(mocks.reduce((a,m)=>a+m.score,0)/mocks.length) : 0;
+  const last  = mocks.length ? mocks[mocks.length-1].score : 0;
+  const rankEst = score => score>=80?'< 500':score>=70?'< 1500':score>=60?'< 3000':score>=50?'< 6000':'> 6000';
+  document.getElementById('mockBest').textContent = best;
+  document.getElementById('mockAvg').textContent  = avg;
+  document.getElementById('mockCount').textContent= mocks.length;
+  document.getElementById('mockLast').textContent = last;
+  const listEl = document.getElementById('mockList');
+  if (!mocks.length){ listEl.innerHTML='<div class="empty"><div class="empty-icon">📝</div><div class="empty-text">No mock tests logged yet</div><button class="btn btn-rose btn-sm" onclick="openModal(\'mockModal\')">+ Log Test</button></div>'; }
+  else {
+    listEl.innerHTML = [...mocks].reverse().map(m => {
+      const col = m.score>=70?'var(--lime)':m.score>=50?'var(--amber)':'var(--rose)';
+      return '<div class="mock-row">'
+        + '<div class="mock-score-box" style="background:' + col + '18;color:' + col + '">' + m.score + '</div>'
+        + '<div class="mock-info"><div class="mock-name">' + m.name + '</div>'
+        + '<div class="mock-meta">' + fmtDate(m.date) + ' · ' + m.platform + (m.time?' · '+m.time+' min':'') + '</div>'
+        + (m.weak ? '<div class="mock-weak">Weak: ' + m.weak + '</div>' : '')
+        + '</div>'
+        + '<div class="mock-rank-est"><div class="mre-num">' + rankEst(m.score) + '</div><div class="mre-label">est. rank</div></div>'
+        + '<button class="icon-btn del" onclick="deleteMock(\'' + m.id + '\')">🗑</button>'
+        + '</div>';
+    }).join('');
   }
-  const scores=mocks.map(m=>m.score);
-  const best=Math.max(...scores);
-  const avg=(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
-  const latest=mocks[mocks.length-1].score;
-  const impr=mocks.length>1?((latest-mocks[0].score)>=0?'+':'')+(latest-mocks[0].score).toFixed(1):'—';
-  el.innerHTML=`
-    <div class="stat-tile st-gate"><div class="stat-num" style="color:var(--lime)">${best}</div><div class="stat-label">Best Score</div></div>
-    <div class="stat-tile st-vlsi"><div class="stat-num" style="color:var(--cyan)">${avg}</div><div class="stat-label">Average</div></div>
-    <div class="stat-tile st-cpp"><div class="stat-num" style="color:var(--amber)">${mocks.length}</div><div class="stat-label">Tests Taken</div></div>
-    <div class="stat-tile st-mock"><div class="stat-num" style="color:${parseFloat(impr)>=0?'var(--lime)':'var(--rose)'}">${impr}</div><div class="stat-label">Improvement</div></div>`;
-  const r=estRank(latest);
-  document.getElementById('estRank').textContent=r.r;
-  document.getElementById('estRankNote').textContent=r.note;
-  document.getElementById('mockList').innerHTML=[...mocks].reverse().map(m=>{
-    const r2=estRank(m.score);
-    const sc=m.score>=70?'var(--lime)':m.score>=50?'var(--amber)':'var(--rose)';
-    return `<div class="mock-row">
-      <div class="mock-score-box" style="background:${sc}18;color:${sc}">${m.score}</div>
-      <div class="mock-info">
-        <div class="mock-name">${m.name}</div>
-        <div class="mock-meta">${m.platform} · ${fmtDate(m.date)}${m.time?' · '+m.time+'min':''}</div>
-        ${m.weak?`<div class="mock-weak">⚠️ Weak: ${m.weak}</div>`:''}
-        ${m.notes?`<div style="font-size:11px;color:var(--fog);margin-top:2px">${m.notes}</div>`:''}
-      </div>
-      <div class="mock-rank-est"><div class="mre-num">${r2.r}</div><div class="mre-label">${r2.note}</div></div>
-      <button class="icon-btn del" onclick="deleteMock('${m.id}')">🗑</button>
-    </div>`;
-  }).join('');
   drawScoreChart(mocks);
 }
-
 function drawScoreChart(mocks){
-  const canvas=document.getElementById('scoreCanvas'); if(!canvas)return;
-  const ctx=canvas.getContext('2d');
-  const box=canvas.parentElement;
-  canvas.width=box.offsetWidth||320; canvas.height=140;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(!mocks.length){
-    ctx.fillStyle='rgba(88,100,128,0.4)';ctx.font='12px Outfit';
-    ctx.textAlign='center';ctx.fillText('No data yet',canvas.width/2,70);return;
-  }
-  const W=canvas.width,H=canvas.height;
-  const p={t:10,b:26,l:30,r:10};
-  const w=W-p.l-p.r,h=H-p.t-p.b;
-  const scores=mocks.map(m=>m.score);
+  const canvas = document.getElementById('scoreChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 400; const H = 150;
+  canvas.width = W; canvas.height = H;
+  ctx.clearRect(0,0,W,H);
+  if (!mocks.length){ ctx.fillStyle='rgba(90,100,128,0.4)'; ctx.font='13px Outfit'; ctx.textAlign='center'; ctx.fillText('No data yet',W/2,H/2); return; }
+  const scores = mocks.map(m=>m.score);
+  const p = {l:30,r:10,t:10,b:20};
+  const w = W-p.l-p.r; const h = H-p.t-p.b;
   // Grid
-  ctx.strokeStyle='rgba(44,50,69,0.8)';ctx.lineWidth=1;
-  [0,25,50,75,100].forEach(v=>{
-    const y=p.t+h-(v/100)*h;
-    ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(W-p.r,y);ctx.stroke();
-    ctx.fillStyle='rgba(90,100,128,0.7)';ctx.font='9px JetBrains Mono';ctx.textAlign='right';
-    ctx.fillText(v,p.l-4,y+3);
-  });
+  ctx.strokeStyle='rgba(44,50,69,0.6)'; ctx.lineWidth=1;
+  [0,25,50,75,100].forEach(v=>{ const y=p.t+h-(v/100)*h; ctx.beginPath(); ctx.moveTo(p.l,y); ctx.lineTo(p.l+w,y); ctx.stroke(); ctx.fillStyle='rgba(90,100,128,0.6)'; ctx.font='9px JetBrains Mono'; ctx.textAlign='right'; ctx.fillText(v,p.l-4,y+3); });
   // Area
-  if(scores.length>1){
-    const g=ctx.createLinearGradient(0,p.t,0,p.t+h);
-    g.addColorStop(0,'rgba(184,255,92,0.2)');g.addColorStop(1,'rgba(184,255,92,0.02)');
-    ctx.fillStyle=g; ctx.beginPath();
-    scores.forEach((s,i)=>{
-      const x=p.l+(i/(scores.length-1))*w;
-      const y=p.t+h-(s/100)*h;
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    });
-    ctx.lineTo(p.l+w,p.t+h);ctx.lineTo(p.l,p.t+h);ctx.closePath();ctx.fill();
-  }
+  const grad = ctx.createLinearGradient(0,p.t,0,p.t+h);
+  grad.addColorStop(0,'rgba(184,255,92,0.2)'); grad.addColorStop(1,'rgba(184,255,92,0)');
+  ctx.fillStyle=grad; ctx.beginPath();
+  scores.forEach((s,i)=>{ const x=p.l+(scores.length>1?(i/(scores.length-1)):0.5)*w; const y=p.t+h-(s/100)*h; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.lineTo(p.l+w,p.t+h); ctx.lineTo(p.l,p.t+h); ctx.closePath(); ctx.fill();
   // Line
-  ctx.strokeStyle='rgba(184,255,92,0.9)';ctx.lineWidth=2;ctx.beginPath();
-  scores.forEach((s,i)=>{
-    const x=p.l+(scores.length>1?(i/(scores.length-1)):0.5)*w;
-    const y=p.t+h-(s/100)*h;
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  });ctx.stroke();
+  ctx.strokeStyle='rgba(184,255,92,0.9)'; ctx.lineWidth=2; ctx.beginPath();
+  scores.forEach((s,i)=>{ const x=p.l+(scores.length>1?(i/(scores.length-1)):0.5)*w; const y=p.t+h-(s/100)*h; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }); ctx.stroke();
   // Dots
-  scores.forEach((s,i)=>{
-    const x=p.l+(scores.length>1?(i/(scores.length-1)):0.5)*w;
-    const y=p.t+h-(s/100)*h;
-    ctx.fillStyle='var(--ink)';ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='rgba(184,255,92,1)';ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='rgba(90,100,128,0.8)';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
-    if(mocks[i])ctx.fillText(mocks[i].date.slice(5),x,H-4);
-  });
+  scores.forEach((s,i)=>{ const x=p.l+(scores.length>1?(i/(scores.length-1)):0.5)*w; const y=p.t+h-(s/100)*h; ctx.fillStyle='var(--ink)'; ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill(); ctx.fillStyle='rgba(184,255,92,1)'; ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill(); ctx.fillStyle='rgba(90,100,128,0.8)'; ctx.font='9px JetBrains Mono'; ctx.textAlign='center'; if(mocks[i])ctx.fillText(mocks[i].date.slice(5),x,H-4); });
 }
 
 // ─────────── RESOURCES ───────────
 function saveResource(){
-  const t=document.getElementById('rTitle').value.trim();
-  if(!t){toast('Title required','te');return;}
-  D.resources.push({id:'r'+Date.now(),title:t,desc:document.getElementById('rDesc').value,domain:document.getElementById('rDomain').value,type:document.getElementById('rType').value,url:document.getElementById('rUrl').value});
-  save(D);closeModal('resModal');toast('Resource added ✓','ts');renderResources('all');
+  const t = document.getElementById('rTitle').value.trim();
+  if (!t){ toast('Title required','te'); return; }
+  D.resources.push({ id:'r'+Date.now(), title:t, desc:document.getElementById('rDesc').value, domain:document.getElementById('rDomain').value, type:document.getElementById('rType').value, url:document.getElementById('rUrl').value });
+  save(D); closeModal('resModal'); toast('Resource added ✓','ts'); renderResources('all');
 }
-function deleteRes(id){D.resources=D.resources.filter(r=>r.id!==id);save(D);renderResources('all');toast('Removed','ti');}
-
+function deleteRes(id){ D.resources=D.resources.filter(r=>r.id!==id); save(D); renderResources('all'); toast('Removed','ti'); }
 let rFilter='all';
-function filterRes(f,el){
-  rFilter=f;
+function filterRes(f, el){
+  rFilter = f;
   document.querySelectorAll('#page-resources .tp-tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');renderResources(f);
+  el.classList.add('active'); renderResources(f);
 }
 function renderResources(f){
-  rFilter=f;
-  let res=D.resources;
-  if(f!=='all')res=res.filter(r=>r.domain===f||r.type===f);
-  const el=document.getElementById('resList');
-  if(!res.length){el.innerHTML='<div class="empty"><div class="empty-icon">📚</div><div class="empty-text">No resources found</div><button class="btn btn-iris btn-sm" onclick="openModal(\'resModal\')">+ Add Resource</button></div>';return;}
-  const dc={gate:'var(--lime)',vlsi:'var(--cyan)',cpp:'var(--amber)'};
-  const te={'book':'📚','video':'🎥','notes':'📄','practice':'✏️','website':'🌐'};
-  el.innerHTML=res.map(r=>`<div class="res-card">
-    <div class="res-title">
-      ${te[r.type]||'📌'} ${r.title}
-      <span class="chip" style="background:${dc[r.domain]||'var(--iris)'}18;color:${dc[r.domain]||'var(--iris)'}">${r.domain.toUpperCase()}</span>
-      <span class="chip chip-sec">${r.type}</span>
-    </div>
-    ${r.desc?`<div class="res-desc">${r.desc}</div>`:''}
-    <div class="res-foot">
-      ${r.url?`<a href="${r.url}" target="_blank" class="res-link">🔗 Open ↗</a>`:''}
-      <button class="btn btn-ghost btn-xs" onclick="deleteRes('${r.id}')">Remove</button>
-    </div>
-  </div>`).join('');
+  rFilter = f;
+  let res = D.resources;
+  if (f !== 'all') res = res.filter(r => r.domain===f || r.type===f);
+  const el = document.getElementById('resList');
+  if (!res.length){ el.innerHTML='<div class="empty"><div class="empty-icon">📚</div><div class="empty-text">No resources found</div><button class="btn btn-iris btn-sm" onclick="openModal(\'resModal\')">+ Add Resource</button></div>'; return; }
+  const dc = {gate:'var(--lime)',vlsi:'var(--cyan)',cpp:'var(--amber)'};
+  const te = {book:'📚',video:'🎥',notes:'📄',practice:'✏️',website:'🌐'};
+  el.innerHTML = res.map(r =>
+    '<div class="res-card">'
+    + '<div class="res-title">' + (te[r.type]||'📌') + ' ' + r.title
+    + '<span class="chip" style="background:' + (dc[r.domain]||'var(--iris)') + '18;color:' + (dc[r.domain]||'var(--iris)') + '">' + r.domain.toUpperCase() + '</span>'
+    + '<span class="chip chip-sec">' + r.type + '</span></div>'
+    + (r.desc ? '<div class="res-desc">' + r.desc + '</div>' : '')
+    + '<div class="res-foot">'
+    + (r.url ? '<a href="' + r.url + '" target="_blank" class="res-link">🔗 Open ↗</a>' : '')
+    + '<button class="btn btn-ghost btn-xs" onclick="deleteRes(\'' + r.id + '\')">Remove</button>'
+    + '</div></div>'
+  ).join('');
 }
 
 // ─────────── DIARY ───────────
-let diaryTopics=[];
-let diaryMood='';
-
-function renderDiary(){
-  renderDiaryList();
-  document.getElementById('diaryCount').textContent=D.diary.length;
-  const today=new Date().toISOString().split('T')[0];
-  // Check if today's entry exists
-  const todayEntry=D.diary.find(e=>e.date===today);
-  if(todayEntry) loadDiaryEntry(todayEntry.id);
-  else newDiaryEntry();
-}
-
+let diaryTopics=[], diaryMood='';
+function renderDiary(){ renderDiaryList(); document.getElementById('diaryCount').textContent=D.diary.length; const today=new Date().toISOString().split('T')[0]; const todayEntry=D.diary.find(e=>e.date===today); if(todayEntry)loadDiaryEntry(todayEntry.id); else newDiaryEntry(); }
 function renderDiaryList(){
-  const el=document.getElementById('diaryEntryList');
-  const cur=document.getElementById('diaryCurrentId').value;
-  if(!D.diary.length){
-    el.innerHTML='<div style="padding:16px;font-size:12px;color:var(--fog)">No entries yet. Start writing!</div>';
-    return;
-  }
-  el.innerHTML=[...D.diary].reverse().map(e=>`<div class="diary-entry-row ${e.id===cur?'active':''}" onclick="loadDiaryEntry('${e.id}')">
-    <div class="der-date">${fmtDate(e.date)} ${e.hours?'· '+e.hours+'h':''}</div>
-    <div class="der-preview">${e.title||e.study||'(no content)'}</div>
-    <div class="der-tags">
-      ${e.mood?`<span class="der-tag mood-${e.mood}">${e.mood}</span>`:''}
-      ${e.topics&&e.topics.length?`<span class="der-tag" style="background:rgba(92,200,255,0.1);color:var(--sky)">${e.topics.length} topics</span>`:''}
-    </div>
-  </div>`).join('');
+  const el  = document.getElementById('diaryEntryList');
+  const cur = document.getElementById('diaryCurrentId').value;
+  if (!D.diary.length){ el.innerHTML='<div style="padding:16px;font-size:12px;color:var(--fog)">No entries yet. Start writing!</div>'; return; }
+  el.innerHTML = [...D.diary].reverse().map(e =>
+    '<div class="diary-entry-row ' + (e.id===cur?'active':'') + '" onclick="loadDiaryEntry(\'' + e.id + '\')">'
+    + '<div class="der-date">' + fmtDate(e.date) + (e.hours?' · '+e.hours+'h':'') + '</div>'
+    + '<div class="der-preview">' + (e.title||e.study||'(no content)') + '</div>'
+    + '<div class="der-tags">'
+    + (e.mood ? '<span class="der-tag mood-' + e.mood + '">' + e.mood + '</span>' : '')
+    + (e.topics&&e.topics.length ? '<span class="der-tag" style="background:rgba(92,200,255,0.1);color:var(--sky)">' + e.topics.length + ' topics</span>' : '')
+    + '</div></div>'
+  ).join('');
 }
-
 function loadDiaryEntry(id){
-  const e=D.diary.find(x=>x.id===id); if(!e)return;
-  document.getElementById('diaryCurrentId').value=id;
-  document.getElementById('diaryEditorDate').textContent=fmtDate(e.date);
-  document.getElementById('diaryTitleInput').value=e.title||'';
-  document.getElementById('diaryStudy').value=e.study||'';
-  document.getElementById('diaryLearnings').value=e.learnings||'';
-  document.getElementById('diaryTomorrow').value=e.tomorrow||'';
-  document.getElementById('diaryReflection').value=e.reflection||'';
-  document.getElementById('diaryHours').value=e.hours||'';
-  diaryMood=e.mood||'';
-  document.querySelectorAll('.mood-btn').forEach(b=>{
-    b.classList.toggle('selected',b.textContent.toLowerCase().includes(e.mood));
-  });
-  diaryTopics=[...(e.topics||[])];
-  renderTopicPills();
-  document.getElementById('diaryDeleteBtn').style.display='inline-flex';
-  document.getElementById('diarySavedMsg').textContent='Last saved: '+fmtDate(e.date);
-  updateWordCount();
-  renderDiaryList();
+  const e = D.diary.find(x=>x.id===id); if(!e)return;
+  document.getElementById('diaryCurrentId').value = id;
+  document.getElementById('diaryEditorDate').textContent = fmtDate(e.date);
+  document.getElementById('diaryTitleInput').value  = e.title||'';
+  document.getElementById('diaryStudy').value       = e.study||'';
+  document.getElementById('diaryLearnings').value   = e.learnings||'';
+  document.getElementById('diaryTomorrow').value    = e.tomorrow||'';
+  document.getElementById('diaryReflection').value  = e.reflection||'';
+  document.getElementById('diaryHours').value       = e.hours||'';
+  diaryMood = e.mood||'';
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('selected', b.dataset.mood===e.mood));
+  diaryTopics = [...(e.topics||[])]; renderTopicPills();
+  document.getElementById('diaryDeleteBtn').style.display = 'inline-flex';
+  document.getElementById('diarySavedMsg').textContent = 'Last saved: ' + fmtDate(e.date);
+  updateWordCount(); renderDiaryList();
 }
-
 function newDiaryEntry(){
-  const today=new Date().toISOString().split('T')[0];
-  const existing=D.diary.find(e=>e.date===today);
-  if(existing){loadDiaryEntry(existing.id);return;}
-  document.getElementById('diaryCurrentId').value='';
-  document.getElementById('diaryEditorDate').textContent='New Entry — '+fmtDate(today);
+  const today = new Date().toISOString().split('T')[0];
+  const existing = D.diary.find(e=>e.date===today);
+  if (existing){ loadDiaryEntry(existing.id); return; }
+  document.getElementById('diaryCurrentId').value = '';
+  document.getElementById('diaryEditorDate').textContent = 'New Entry — ' + fmtDate(today);
   ['diaryTitleInput','diaryStudy','diaryLearnings','diaryTomorrow','diaryReflection'].forEach(f=>document.getElementById(f).value='');
-  document.getElementById('diaryHours').value='';
+  document.getElementById('diaryHours').value = '';
   diaryMood=''; diaryTopics=[];
   document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
   renderTopicPills();
-  document.getElementById('diaryDeleteBtn').style.display='none';
-  document.getElementById('diarySavedMsg').textContent='';
+  document.getElementById('diaryDeleteBtn').style.display = 'none';
+  document.getElementById('diarySavedMsg').textContent = '';
   updateWordCount();
 }
-
 function saveDiaryEntry(){
-  const today=new Date().toISOString().split('T')[0];
-  const existId=document.getElementById('diaryCurrentId').value;
-  const entry={
-    id:existId||'d'+Date.now(),
-    date:today,
-    title:document.getElementById('diaryTitleInput').value.trim(),
-    study:document.getElementById('diaryStudy').value.trim(),
-    learnings:document.getElementById('diaryLearnings').value.trim(),
-    tomorrow:document.getElementById('diaryTomorrow').value.trim(),
-    reflection:document.getElementById('diaryReflection').value.trim(),
-    mood:diaryMood,
-    topics:[...diaryTopics],
-    hours:parseFloat(document.getElementById('diaryHours').value)||0,
-    savedAt:new Date().toISOString()
+  const today   = new Date().toISOString().split('T')[0];
+  const existId = document.getElementById('diaryCurrentId').value;
+  const entry   = {
+    id: existId||'d'+Date.now(), date: today,
+    title:      document.getElementById('diaryTitleInput').value.trim(),
+    study:      document.getElementById('diaryStudy').value.trim(),
+    learnings:  document.getElementById('diaryLearnings').value.trim(),
+    tomorrow:   document.getElementById('diaryTomorrow').value.trim(),
+    reflection: document.getElementById('diaryReflection').value.trim(),
+    mood: diaryMood, topics: [...diaryTopics],
+    hours: parseFloat(document.getElementById('diaryHours').value)||0,
+    savedAt: new Date().toISOString()
   };
-  if(!entry.study&&!entry.title&&!entry.learnings&&!entry.reflection){toast('Write something first!','te');return;}
-  if(existId){const i=D.diary.findIndex(x=>x.id===existId);if(i>=0)D.diary[i]=entry;else D.diary.push(entry);}
-  else {D.diary.push(entry); document.getElementById('diaryCurrentId').value=entry.id;}
-  // Mark activity
-  D.activity[today]=(D.activity[today]||0); // diary saves don't count as task completions
+  if (!entry.study&&!entry.title&&!entry.learnings&&!entry.reflection){ toast('Write something first!','te'); return; }
+  if (existId){ const i=D.diary.findIndex(x=>x.id===existId); if(i>=0)D.diary[i]=entry; else D.diary.push(entry); }
+  else { D.diary.push(entry); document.getElementById('diaryCurrentId').value=entry.id; }
   save(D);
-  document.getElementById('diarySavedMsg').textContent='Saved at '+new Date().toLocaleTimeString();
-  document.getElementById('diaryDeleteBtn').style.display='inline-flex';
-  document.getElementById('diaryCount').textContent=D.diary.length;
-  renderDiaryList();
-  toast('Diary entry saved ✓','ts');
-  refreshDash();
+  document.getElementById('diarySavedMsg').textContent = 'Saved at ' + new Date().toLocaleTimeString();
+  document.getElementById('diaryDeleteBtn').style.display = 'inline-flex';
+  document.getElementById('diaryCount').textContent = D.diary.length;
+  renderDiaryList(); toast('Diary entry saved ✓','ts'); refreshDash();
 }
-
-function deleteDiaryEntry(){
-  const id=document.getElementById('diaryCurrentId').value; if(!id)return;
-  D.diary=D.diary.filter(e=>e.id!==id); save(D);
-  newDiaryEntry(); renderDiaryList();
-  document.getElementById('diaryCount').textContent=D.diary.length;
-  toast('Entry deleted','ti');
-}
-
-function clearDiaryEditor(){
-  if(!confirm('Clear this entry?'))return;
-  newDiaryEntry();
-}
-
-function selectMood(m,el){
-  diaryMood=m;
-  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
-  el.classList.add('selected');
-}
-
-function addDiaryTopic(){
-  const inp=document.getElementById('topicInput');
-  const v=inp.value.trim(); if(!v)return;
-  if(!diaryTopics.includes(v))diaryTopics.push(v);
-  inp.value=''; renderTopicPills();
-}
-
-function removeTopic(t){diaryTopics=diaryTopics.filter(x=>x!==t);renderTopicPills();}
-
-function renderTopicPills(){
-  const el=document.getElementById('topicsPills');
-  el.innerHTML=diaryTopics.map(t=>`<span class="topic-pill">${t}<button onclick="removeTopic('${t}')">×</button></span>`).join('');
-}
-
-function updateWordCount(){
-  const text=['diaryStudy','diaryLearnings','diaryTomorrow','diaryReflection'].map(f=>document.getElementById(f).value).join(' ');
-  const wc=text.trim().split(/\s+/).filter(w=>w.length>0).length;
-  document.getElementById('diaryWordCount').textContent=wc+' words';
-}
-['diaryStudy','diaryLearnings','diaryTomorrow','diaryReflection'].forEach(f=>{
-  document.getElementById(f).addEventListener('input',updateWordCount);
-});
+function deleteDiaryEntry(){ const id=document.getElementById('diaryCurrentId').value; if(!id)return; D.diary=D.diary.filter(e=>e.id!==id); save(D); newDiaryEntry(); renderDiaryList(); document.getElementById('diaryCount').textContent=D.diary.length; toast('Entry deleted','ti'); }
+function clearDiaryEditor(){ if(!confirm('Clear this entry?'))return; newDiaryEntry(); }
+function selectMood(m, el){ diaryMood=m; document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); }
+function addDiaryTopic(){ const inp=document.getElementById('topicInput'); const v=inp.value.trim(); if(!v)return; if(!diaryTopics.includes(v))diaryTopics.push(v); inp.value=''; renderTopicPills(); }
+function removeTopic(t){ diaryTopics=diaryTopics.filter(x=>x!==t); renderTopicPills(); }
+function renderTopicPills(){ document.getElementById('topicsPills').innerHTML=diaryTopics.map(t=>'<span class="topic-pill">'+t+'<button onclick="removeTopic(\''+t+'\')">×</button></span>').join(''); }
+function updateWordCount(){ const text=['diaryStudy','diaryLearnings','diaryTomorrow','diaryReflection'].map(f=>document.getElementById(f).value).join(' '); const wc=text.trim().split(/\s+/).filter(w=>w.length>0).length; document.getElementById('diaryWordCount').textContent=wc+' words'; }
 
 // ─────────── HELPERS ───────────
-function fmtDate(ds){
-  if(!ds)return'';
-  return new Date(ds+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
-}
-
-function toast(msg,type='ti'){
-  const el=document.getElementById('toastEl');
-  const d=document.createElement('div');
-  d.className='toast '+type;
-  const ico={ts:'✅',te:'❌',ti:'ℹ️'}[type]||'ℹ️';
-  d.innerHTML=`<span>${ico}</span><span>${msg}</span>`;
+function fmtDate(ds){ if(!ds)return''; return new Date(ds+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }
+function toast(msg, type='ti'){
+  const el = document.getElementById('toastEl');
+  const d  = document.createElement('div');
+  d.className = 'toast ' + type;
+  const ico = {ts:'✅',te:'❌',ti:'ℹ️'}[type]||'ℹ️';
+  d.innerHTML = '<span>'+ico+'</span><span>'+msg+'</span>';
   el.appendChild(d);
-  setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(60px)';d.style.transition='all 0.3s';setTimeout(()=>d.remove(),300);},3000);
+  setTimeout(()=>{ d.style.opacity='0'; d.style.transform='translateX(60px)'; d.style.transition='all 0.3s'; setTimeout(()=>d.remove(),300); },3000);
 }
 
 // ─────────── INIT ───────────
-async function init(){
-  refreshDash();
-  updateNavBadges();
-  // Try cloud load if credentials exist
-  if (_apiKey && _binId) {
-    setSaveStatus('loading');
+function init(){
+  // Wire up overlay close-on-backdrop-click
+  document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
+  // Wire up diary textarea listeners
+  ['diaryStudy','diaryLearnings','diaryTomorrow','diaryReflection'].forEach(f => {
+    const el = document.getElementById(f); if(el) el.addEventListener('input', updateWordCount);
+  });
+  // Render dashboard
+  refreshDash(); updateNavBadges();
+  // Cloud load if credentials saved
+  if (_fbUrl){
     document.getElementById('notConnectedBanner').style.display = 'none';
-    const cloudData = await cloudLoad();
-    if (cloudData && cloudData.tasks) {
-      D = cloudData;
-      // Ensure all required keys
-      if (!D.filters) D.filters = {gate:'all',vlsi:'all',cpp:'all'};
-      if (!D.activeSection) D.activeSection = {gate:null,vlsi:null,cpp:null};
-      if (!D.diary) D.diary = [];
-      if (!D.activity) D.activity = {};
-      if (!D.completedDates) D.completedDates = {};
-      if (!D.resources) D.resources = defaultResources();
-      refreshDash(); updateNavBadges();
-      setSaveStatus('saved');
-      showBinInfo(_binId);
-    } else {
-      setSaveStatus('error');
-    }
+    setSaveStatus('loading');
+    fbRead()
+      .then(cloudData => {
+        if (cloudData && cloudData.tasks){
+          D = ensureDataShape(cloudData); setSaveStatus('saved');
+          document.getElementById('binInfoBar').style.display = 'flex';
+          document.getElementById('binIdDisplay').textContent = _fbUrl + _fbPath;
+        } else {
+          fbWrite(D).then(()=>setSaveStatus('saved')).catch(()=>setSaveStatus('error'));
+        }
+        refreshDash(); updateNavBadges();
+      })
+      .catch(e => { console.warn('Firebase load failed:', e.message); setSaveStatus('error'); });
+  } else {
+    setSaveStatus('offline');
   }
 }
-init();
-window.addEventListener('resize',()=>{
-  if(document.getElementById('page-mock').classList.contains('active'))drawScoreChart(D.mocks);
+
+document.addEventListener('DOMContentLoaded', init);
+window.addEventListener('resize', () => {
+  if (document.getElementById('page-mock').classList.contains('active')) drawScoreChart(D.mocks);
 });
 </script>
 </body>
