@@ -1,0 +1,2489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrepOS — GATE EC 2027</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0d0f14;
+  --ink2: #13161e;
+  --ink3: #1a1e2a;
+  --ink4: #222736;
+  --line: #2c3245;
+  --line2: #3a4260;
+  --mist: #8895b8;
+  --fog:  #5a6480;
+  --snow: #e8edf8;
+  --lime: #b8ff5c;
+  --cyan: #3de8e8;
+  --rose: #ff5c7a;
+  --amber:#ffb830;
+  --iris: #8b7cff;
+  --sky:  #5cc8ff;
+  --gate-c: #b8ff5c;
+  --vlsi-c: #3de8e8;
+  --cpp-c:  #ffb830;
+  --mock-c: #ff5c7a;
+  --res-c:  #8b7cff;
+  --diary-c:#5cc8ff;
+  --h: 'Instrument Serif', serif;
+  --b: 'Outfit', sans-serif;
+  --m: 'JetBrains Mono', monospace;
+  --r: 10px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+
+body {
+  background: var(--ink);
+  color: var(--snow);
+  font-family: var(--b);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── SIDEBAR ── */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--ink2);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.sidebar-brand {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.brand-tag {
+  font-family: var(--m);
+  font-size: 10px;
+  color: var(--fog);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.brand-name {
+  font-family: var(--h);
+  font-size: 22px;
+  font-style: italic;
+  color: var(--lime);
+  line-height: 1;
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--fog);
+  margin-top: 4px;
+}
+
+.sidebar-nav {
+  padding: 12px 10px;
+  flex: 1;
+}
+
+.nav-group-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--fog);
+  padding: 8px 10px 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mist);
+  transition: all 0.18s;
+  margin-bottom: 2px;
+  border: 1px solid transparent;
+}
+.nav-item:hover { background: var(--ink3); color: var(--snow); }
+.nav-item.active {
+  color: var(--snow);
+  font-weight: 600;
+}
+.nav-item .ni-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.nav-item .ni-badge {
+  margin-left: auto;
+  font-family: var(--m);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--ink4);
+  color: var(--fog);
+}
+
+.nav-item[data-page="dashboard"].active { border-color: rgba(184,255,92,0.2); }
+.nav-item[data-page="dashboard"].active .ni-icon { background: rgba(184,255,92,0.15); }
+.nav-item[data-page="gate"].active      { border-color: rgba(184,255,92,0.2); }
+.nav-item[data-page="gate"].active .ni-icon      { background: rgba(184,255,92,0.15); }
+.nav-item[data-page="vlsi"].active      { border-color: rgba(61,232,232,0.2); }
+.nav-item[data-page="vlsi"].active .ni-icon      { background: rgba(61,232,232,0.15); }
+.nav-item[data-page="cpp"].active       { border-color: rgba(255,184,48,0.2); }
+.nav-item[data-page="cpp"].active .ni-icon       { background: rgba(255,184,48,0.15); }
+.nav-item[data-page="mock"].active      { border-color: rgba(255,92,122,0.2); }
+.nav-item[data-page="mock"].active .ni-icon      { background: rgba(255,92,122,0.15); }
+.nav-item[data-page="resources"].active { border-color: rgba(139,124,255,0.2); }
+.nav-item[data-page="resources"].active .ni-icon { background: rgba(139,124,255,0.15); }
+.nav-item[data-page="diary"].active     { border-color: rgba(92,200,255,0.2); }
+.nav-item[data-page="diary"].active .ni-icon     { background: rgba(92,200,255,0.15); }
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--line);
+}
+.streak-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,184,48,0.1);
+  border: 1px solid rgba(255,184,48,0.25);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-family: var(--m);
+  font-size: 12px;
+  color: var(--amber);
+  cursor: pointer;
+}
+
+/* ── MAIN ── */
+.main-area {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.page { display: none; padding: 28px 28px 48px; max-width: 1280px; }
+.page.active { display: block; }
+
+/* ── TOP HEADER BAR ── */
+.page-topbar {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.page-title {
+  font-family: var(--h);
+  font-size: 32px;
+  font-style: italic;
+  line-height: 1;
+}
+.page-subtitle { font-size: 13px; color: var(--mist); margin-top: 5px; }
+.page-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 8px 18px;
+  border: none; border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--b);
+  font-size: 13px; font-weight: 600;
+  transition: all 0.18s;
+  display: inline-flex; align-items: center; gap: 7px;
+  white-space: nowrap;
+}
+.btn-lime   { background: var(--lime); color: var(--ink); }
+.btn-lime:hover { background: #a3ef45; }
+.btn-cyan   { background: var(--cyan); color: var(--ink); }
+.btn-cyan:hover { background: #2ad0d0; }
+.btn-amber  { background: var(--amber); color: var(--ink); }
+.btn-amber:hover { background: #e8a220; }
+.btn-rose   { background: var(--rose); color: #fff; }
+.btn-rose:hover  { background: #e8455f; }
+.btn-iris   { background: var(--iris); color: #fff; }
+.btn-iris:hover  { background: #7060e8; }
+.btn-sky    { background: var(--sky); color: var(--ink); }
+.btn-sky:hover   { background: #44b0e8; }
+.btn-ghost  { background: var(--ink3); color: var(--mist); border: 1px solid var(--line); }
+.btn-ghost:hover { background: var(--ink4); color: var(--snow); border-color: var(--line2); }
+.btn-sm     { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+.btn-xs     { padding: 4px 9px; font-size: 11px; border-radius: 5px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 20px;
+}
+.card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-family: var(--b);
+  font-size: 13px; font-weight: 700;
+  color: var(--mist);
+  display: flex; align-items: center; gap: 8px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ── GRID ── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media(max-width:1100px){ .g3{grid-template-columns:1fr 1fr;} }
+@media(max-width:800px){
+  .g2,.g3,.g4{grid-template-columns:1fr;}
+  .sidebar{ width:60px; min-width:60px; }
+  .sidebar .brand-name, .sidebar .brand-sub, .sidebar .brand-tag,
+  .sidebar .nav-group-label, .nav-item span:not(.ni-icon),
+  .sidebar-footer .streak-pill span { display: none; }
+  .nav-item { justify-content: center; padding: 10px; }
+  .sidebar-footer { padding: 10px; }
+  .streak-pill { justify-content: center; padding: 8px; }
+}
+
+/* ── STAT TILES ── */
+.stat-tile {
+  background: var(--ink2); border: 1px solid var(--line);
+  border-radius: var(--r); padding: 18px;
+  position: relative; overflow: hidden;
+}
+.stat-tile::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.st-gate::before  { background: var(--lime); }
+.st-vlsi::before  { background: var(--cyan); }
+.st-cpp::before   { background: var(--amber); }
+.st-mock::before  { background: var(--rose); }
+.st-diary::before { background: var(--sky); }
+.st-iris::before  { background: var(--iris); }
+
+.stat-num {
+  font-family: var(--m);
+  font-size: 32px; font-weight: 700;
+  line-height: 1; margin-bottom: 4px;
+}
+.stat-label { font-size: 11px; color: var(--fog); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-sub   { font-size: 12px; color: var(--mist); margin-top: 6px; }
+
+/* ── PROGRESS BAR ── */
+.pbar { height: 5px; background: var(--ink4); border-radius: 3px; overflow: hidden; margin-top: 10px; }
+.pbar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.pf-lime  { background: linear-gradient(90deg,var(--lime),#80ff20); }
+.pf-cyan  { background: linear-gradient(90deg,var(--cyan),#00c8c8); }
+.pf-amber { background: linear-gradient(90deg,var(--amber),#ff8c00); }
+.pf-rose  { background: linear-gradient(90deg,var(--rose),#ff2060); }
+.pf-iris  { background: linear-gradient(90deg,var(--iris),#5c50e8); }
+.pf-sky   { background: linear-gradient(90deg,var(--sky),#0090e8); }
+
+/* ── PACE BADGE ── */
+.pace {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 20px;
+  font-family: var(--m); font-size: 10px; font-weight: 700;
+  margin-top: 8px;
+}
+.pace-ahead  { background: rgba(184,255,92,0.12); color: var(--lime); }
+.pace-on     { background: rgba(255,184,48,0.12); color: var(--amber); }
+.pace-behind { background: rgba(255,92,122,0.12); color: var(--rose); }
+
+/* ── DEADLINE ROW ── */
+.deadline-row {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 12px;
+  margin-bottom: 24px;
+}
+@media(max-width:900px){ .deadline-row{grid-template-columns:1fr 1fr;} }
+.dl-card {
+  background: var(--ink3); border: 1px solid var(--line);
+  border-radius: var(--r); padding: 14px 16px;
+  text-align: center;
+}
+.dl-num {
+  font-family: var(--m); font-size: 28px; font-weight: 700; line-height: 1;
+}
+.dl-label { font-size: 11px; color: var(--fog); margin-top: 4px; }
+
+/* ── SUBJECT LAYOUT ── */
+.subj-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 16px;
+}
+@media(max-width:800px){ .subj-shell{grid-template-columns:1fr;} }
+
+.sections-panel {
+  background: var(--ink2); border: 1px solid var(--line);
+  border-radius: var(--r); overflow: hidden;
+  height: fit-content;
+}
+.sp-head {
+  padding: 13px 16px; border-bottom: 1px solid var(--line);
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--fog);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.section-row {
+  padding: 11px 16px; cursor: pointer;
+  border-bottom: 1px solid rgba(44,50,69,0.5);
+  transition: background 0.15s;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-row:last-child { border-bottom: none; }
+.section-row:hover { background: var(--ink3); }
+.section-row.active { background: rgba(184,255,92,0.05); }
+.section-row.active .sr-name { color: var(--lime); }
+.section-row.active-vlsi { background: rgba(61,232,232,0.05); }
+.section-row.active-vlsi .sr-name { color: var(--cyan); }
+.section-row.active-cpp  { background: rgba(255,184,48,0.05); }
+.section-row.active-cpp  .sr-name { color: var(--amber); }
+.sr-name { font-size: 12px; font-weight: 500; flex: 1; min-width: 0; }
+.sr-pct  { font-family: var(--m); font-size: 10px; color: var(--fog); }
+.sr-bar  { height: 2px; background: var(--ink4); border-radius: 1px; margin-top: 3px; overflow: hidden; }
+.sr-bar-fill { height: 100%; border-radius: 1px; }
+
+.add-sec-btn {
+  width: 100%; padding: 10px;
+  background: transparent; border: 1px dashed var(--line);
+  border-radius: 0 0 var(--r) var(--r);
+  cursor: pointer; color: var(--fog); font-size: 11px;
+  font-family: var(--b); transition: all 0.18s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.add-sec-btn:hover { border-color: var(--line2); color: var(--mist); background: var(--ink3); }
+
+/* ── TASK PANEL ── */
+.task-panel {
+  background: var(--ink2); border: 1px solid var(--line);
+  border-radius: var(--r); overflow: hidden;
+}
+.tp-head {
+  padding: 14px 20px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px;
+}
+.tp-title { font-size: 14px; font-weight: 700; }
+.tp-tabs {
+  display: flex; gap: 2px; padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--ink3);
+}
+.tp-tab {
+  padding: 8px 14px; font-size: 12px; font-weight: 500;
+  color: var(--fog); cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all 0.15s; margin-bottom: -1px; white-space: nowrap;
+}
+.tp-tab:hover { color: var(--mist); }
+.tp-tab.active { color: var(--snow); border-bottom-color: var(--lime); }
+
+.task-list { max-height: 560px; overflow-y: auto; }
+.task-list::-webkit-scrollbar { width: 3px; }
+.task-list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+
+.task-row {
+  padding: 13px 20px;
+  display: flex; align-items: flex-start; gap: 12px;
+  border-bottom: 1px solid rgba(44,50,69,0.4);
+  transition: background 0.12s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: var(--ink3); }
+.task-row.done { opacity: 0.45; }
+.task-row.done .tr-name { text-decoration: line-through; }
+
+.tcb {
+  width: 17px; height: 17px; min-width: 17px;
+  border: 2px solid var(--line2); border-radius: 4px;
+  cursor: pointer; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.tcb.checked { border-color: var(--lime); background: var(--lime); }
+.tcb.checked::after { content: '✓'; font-size: 10px; font-weight: 800; color: var(--ink); }
+.tcb.checked-vlsi  { border-color: var(--cyan);  background: var(--cyan); }
+.tcb.checked-cpp   { border-color: var(--amber); background: var(--amber); }
+
+.tr-body { flex: 1; min-width: 0; }
+.tr-name { font-size: 13px; font-weight: 500; }
+.tr-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; align-items: center; }
+.chip {
+  padding: 2px 7px; border-radius: 20px;
+  font-size: 10px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.chip-daily    { background: rgba(184,255,92,0.1);  color: var(--lime); }
+.chip-weekly   { background: rgba(61,232,232,0.1);  color: var(--cyan); }
+.chip-monthly  { background: rgba(255,184,48,0.1);  color: var(--amber); }
+.chip-high     { background: rgba(255,92,122,0.1);  color: var(--rose); }
+.chip-sec      { background: var(--ink4); color: var(--mist); }
+.chip-overdue  { background: rgba(255,92,122,0.15); color: var(--rose); }
+.chip-done     { background: rgba(184,255,92,0.1);  color: var(--lime); }
+.chip-date     { color: var(--fog); font-family: var(--m); font-size: 10px; }
+
+.tr-actions { opacity: 0; display: flex; gap: 4px; align-items: center; transition: opacity 0.15s; }
+.task-row:hover .tr-actions { opacity: 1; }
+
+.icon-btn {
+  width: 26px; height: 26px;
+  background: var(--ink4); border: none; border-radius: 5px;
+  color: var(--fog); font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.icon-btn:hover { background: var(--line); color: var(--snow); }
+.icon-btn.del:hover { background: rgba(255,92,122,0.15); color: var(--rose); }
+
+/* ── EMPTY STATE ── */
+.empty {
+  padding: 48px 24px; text-align: center; color: var(--fog);
+}
+.empty-icon { font-size: 32px; margin-bottom: 10px; }
+.empty-text { font-size: 13px; margin-bottom: 14px; }
+
+/* ── MODAL ── */
+.overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(5,7,12,0.8); backdrop-filter: blur(6px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.overlay.open { display: flex; }
+.modal {
+  background: var(--ink2); border: 1px solid var(--line2);
+  border-radius: 14px; width: 100%; max-width: 500px;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+}
+.modal::-webkit-scrollbar { width: 3px; }
+.modal::-webkit-scrollbar-thumb { background: var(--line); }
+.modal-head {
+  padding: 18px 22px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-family: var(--h); font-size: 20px; font-style: italic; }
+.modal-close {
+  width: 30px; height: 30px; background: var(--ink3);
+  border: none; border-radius: 7px; cursor: pointer;
+  color: var(--mist); font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.modal-close:hover { background: var(--line); color: var(--snow); }
+.modal-body { padding: 22px; }
+.modal-footer { padding: 14px 22px; border-top: 1px solid var(--line); display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ── FORMS ── */
+.fg { margin-bottom: 14px; }
+.fg label {
+  display: block; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--fog); margin-bottom: 5px;
+}
+.fi, .fs, .fta {
+  width: 100%; padding: 9px 13px;
+  background: var(--ink3); border: 1px solid var(--line);
+  border-radius: 7px; color: var(--snow);
+  font-family: var(--b); font-size: 13px;
+  outline: none; transition: border-color 0.15s;
+}
+.fi:focus, .fs:focus, .fta:focus { border-color: var(--line2); }
+.fta { resize: vertical; min-height: 80px; }
+.fs option { background: var(--ink3); }
+.frow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── WEEKLY BARS ── */
+.week-chart { display: flex; gap: 5px; align-items: flex-end; height: 64px; }
+.wb-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; height: 100%; }
+.wb { width: 100%; border-radius: 3px 3px 0 0; background: var(--ink4); min-height: 3px; flex: 0 0 auto; }
+.wb.active { background: var(--lime); }
+.wb.today { box-shadow: 0 0 0 2px var(--amber); }
+.wb-label { font-family: var(--m); font-size: 9px; color: var(--fog); }
+
+/* ── STREAK CALENDAR ── */
+.cal-outer { overflow-x: auto; padding-bottom: 4px; }
+.cal-months { display: flex; gap: 16px; min-width: max-content; }
+.cal-month { }
+.cal-mlabel { font-family: var(--m); font-size: 10px; color: var(--fog); margin-bottom: 5px; }
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 13px);
+  gap: 3px;
+}
+.cal-cell {
+  width: 13px; height: 13px; border-radius: 2px;
+  background: var(--ink4); cursor: default;
+  transition: transform 0.1s; position: relative;
+}
+.cal-cell:hover { transform: scale(1.4); z-index: 2; }
+.cal-cell.has-tasks  { background: rgba(184,255,92,0.2); }
+.cal-cell.full-day   { background: rgba(184,255,92,0.6); }
+.cal-cell.today-cell { box-shadow: 0 0 0 1.5px var(--amber); }
+
+/* ── TIMELINE ── */
+.timeline-list { position: relative; padding-left: 22px; }
+.timeline-list::before {
+  content: ''; position: absolute; left: 7px; top: 6px; bottom: 6px;
+  width: 1px; background: var(--line);
+}
+.tl-row { position: relative; margin-bottom: 14px; }
+.tl-dot {
+  position: absolute; left: -19px; top: 6px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--ink4); border: 2px solid var(--line2); z-index: 1;
+}
+.tl-dot.tl-done    { background: var(--lime); border-color: var(--lime); }
+.tl-dot.tl-current { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 0 3px rgba(255,184,48,0.2); }
+.tl-content {
+  background: var(--ink3); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px 14px;
+}
+.tl-name { font-size: 12px; font-weight: 600; }
+.tl-meta { font-size: 10px; color: var(--fog); margin-top: 3px; font-family: var(--m); }
+.tl-pbar { margin-top: 6px; height: 3px; background: var(--ink4); border-radius: 2px; overflow: hidden; }
+
+/* ── MOCK TEST ── */
+.rank-hero {
+  background: linear-gradient(135deg, rgba(184,255,92,0.06), rgba(61,232,232,0.06));
+  border: 1px solid var(--line); border-radius: var(--r);
+  padding: 24px; text-align: center;
+}
+.rank-num {
+  font-family: var(--m); font-size: 52px; font-weight: 700;
+  color: var(--lime); line-height: 1;
+}
+.rank-label { font-size: 13px; color: var(--mist); margin-top: 6px; }
+.rank-note  { font-size: 11px; color: var(--fog); margin-top: 4px; }
+
+.mock-row {
+  background: var(--ink3); border: 1px solid var(--line);
+  border-radius: 9px; padding: 14px 18px;
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 8px; flex-wrap: wrap;
+}
+.mock-score-box {
+  width: 52px; height: 52px; min-width: 52px;
+  border-radius: 10px; display: flex; align-items: center;
+  justify-content: center; font-family: var(--m);
+  font-size: 18px; font-weight: 700;
+}
+.mock-info { flex: 1; min-width: 0; }
+.mock-name { font-size: 13px; font-weight: 600; }
+.mock-meta { font-size: 11px; color: var(--fog); margin-top: 3px; }
+.mock-weak { font-size: 11px; color: var(--rose); margin-top: 3px; }
+.mock-rank-est { text-align: right; min-width: 80px; }
+.mre-num { font-family: var(--m); font-size: 16px; font-weight: 700; color: var(--lime); }
+.mre-label { font-size: 10px; color: var(--fog); }
+
+/* ── RESOURCES ── */
+.res-card {
+  background: var(--ink3); border: 1px solid var(--line);
+  border-radius: 9px; padding: 14px 16px; margin-bottom: 8px;
+  transition: border-color 0.15s;
+}
+.res-card:hover { border-color: var(--line2); }
+.res-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.res-desc  { font-size: 11px; color: var(--fog); margin-top: 4px; }
+.res-foot  { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.res-link  { font-size: 11px; color: var(--iris); text-decoration: none; display: flex; align-items: center; gap: 4px; }
+.res-link:hover { text-decoration: underline; }
+
+/* ── DIARY ── */
+.diary-shell {
+  display: grid; grid-template-columns: 280px 1fr; gap: 20px;
+}
+@media(max-width:900px){ .diary-shell{grid-template-columns:1fr;} }
+
+.diary-sidebar {
+  background: var(--ink2); border: 1px solid var(--line);
+  border-radius: var(--r); overflow: hidden; height: fit-content;
+}
+.diary-sb-head {
+  padding: 14px 16px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.diary-sb-title { font-size: 12px; font-weight: 700; color: var(--mist); text-transform: uppercase; letter-spacing: 1px; }
+.diary-entry-row {
+  padding: 11px 16px; cursor: pointer; border-bottom: 1px solid rgba(44,50,69,0.4);
+  transition: background 0.13s;
+}
+.diary-entry-row:last-child { border-bottom: none; }
+.diary-entry-row:hover { background: var(--ink3); }
+.diary-entry-row.active { background: rgba(92,200,255,0.06); }
+.diary-entry-row.active .der-date { color: var(--sky); }
+.der-date { font-family: var(--m); font-size: 11px; font-weight: 700; color: var(--mist); }
+.der-preview { font-size: 11px; color: var(--fog); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.der-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.der-tag {
+  padding: 1px 6px; border-radius: 10px;
+  font-size: 9px; font-weight: 700;
+}
+.mood-great  { background: rgba(184,255,92,0.12); color: var(--lime); }
+.mood-good   { background: rgba(61,232,232,0.12); color: var(--cyan); }
+.mood-okay   { background: rgba(255,184,48,0.12); color: var(--amber); }
+.mood-bad    { background: rgba(255,92,122,0.12); color: var(--rose); }
+.mood-tired  { background: rgba(139,124,255,0.12); color: var(--iris); }
+
+.diary-editor {
+  background: var(--ink2); border: 1px solid var(--line);
+  border-radius: var(--r); overflow: hidden;
+}
+.diary-toolbar {
+  padding: 14px 20px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+.diary-date-display { font-family: var(--m); font-size: 13px; color: var(--sky); }
+.diary-content-area { padding: 24px; }
+.diary-title-input {
+  width: 100%; background: transparent; border: none; outline: none;
+  font-family: var(--h); font-size: 26px; font-style: italic;
+  color: var(--snow); margin-bottom: 16px;
+  border-bottom: 1px solid var(--line); padding-bottom: 12px;
+}
+.diary-title-input::placeholder { color: var(--fog); }
+
+.diary-section { margin-bottom: 20px; }
+.ds-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--fog); margin-bottom: 8px;
+}
+.diary-textarea {
+  width: 100%; background: var(--ink3); border: 1px solid var(--line);
+  border-radius: 8px; padding: 12px 14px; color: var(--snow);
+  font-family: var(--b); font-size: 13px; line-height: 1.7;
+  resize: vertical; outline: none; transition: border-color 0.15s;
+  min-height: 90px;
+}
+.diary-textarea:focus { border-color: var(--line2); }
+
+.mood-selector { display: flex; gap: 8px; flex-wrap: wrap; }
+.mood-btn {
+  padding: 6px 14px; border-radius: 20px; cursor: pointer;
+  font-size: 12px; font-weight: 600; border: 1px solid var(--line);
+  background: var(--ink3); color: var(--mist); transition: all 0.15s;
+}
+.mood-btn:hover, .mood-btn.selected { border-color: var(--sky); color: var(--sky); background: rgba(92,200,255,0.08); }
+
+.topics-input-row { display: flex; gap: 8px; }
+.topics-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.topic-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  background: rgba(92,200,255,0.1); border: 1px solid rgba(92,200,255,0.25);
+  color: var(--sky); font-size: 11px;
+}
+.topic-pill button { background: none; border: none; cursor: pointer; color: var(--sky); font-size: 12px; padding: 0; line-height: 1; }
+
+.diary-save-bar {
+  padding: 14px 20px; border-top: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+}
+.diary-saved { font-size: 11px; color: var(--fog); }
+
+/* ── SCORE CHART ── */
+.chart-box { height: 150px; position: relative; }
+
+/* ── PENDING CLOUD ── */
+.pending-cloud { display: flex; flex-wrap: wrap; gap: 7px; }
+.pending-chip {
+  padding: 5px 11px; border-radius: 20px;
+  font-size: 11px; background: var(--ink3);
+  border: 1px solid var(--line); cursor: default;
+}
+.pending-chip.overdue { border-color: rgba(255,92,122,0.4); color: var(--rose); }
+.pending-chip.soon    { border-color: rgba(255,184,48,0.4); color: var(--amber); }
+
+/* ── TOAST ── */
+.toasts {
+  position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  background: var(--ink3); border: 1px solid var(--line2);
+  border-radius: 9px; padding: 11px 16px;
+  font-size: 12px; display: flex; align-items: center; gap: 9px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+  animation: tSlide 0.3s ease; max-width: 300px;
+}
+.toast.ts  { border-left: 3px solid var(--lime); }
+.toast.te  { border-left: 3px solid var(--rose); }
+.toast.ti  { border-left: 3px solid var(--sky); }
+@keyframes tSlide {
+  from { transform: translateX(80px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+/* ── TOOLTIP ── */
+[title] { position: relative; cursor: help; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page.active > * { animation: fadeUp 0.3s ease both; }
+.page.active > *:nth-child(2) { animation-delay: 0.05s; }
+.page.active > *:nth-child(3) { animation-delay: 0.1s; }
+.page.active > *:nth-child(4) { animation-delay: 0.15s; }
+
+/* ── CHART CANVAS ── */
+canvas { border-radius: 6px; display: block; }
+
+/* MISC */
+.divider { border: none; border-top: 1px solid var(--line); margin: 16px 0; }
+.section-filter-tabs {
+  display: flex; gap: 2px; margin-bottom: 0;
+}
+
+/* ── SAVE BANNER ── */
+.save-banner {
+  background: rgba(255,184,48,0.08);
+  border: 1px solid rgba(255,184,48,0.25);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  font-size: 12px;
+  color: var(--amber);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.save-banner b { color: var(--snow); }
+.save-banner-close { margin-left:auto; cursor:pointer; color:var(--fog); font-size:14px; }
+
+/* ── SETUP MODAL ── */
+.modal code { background: var(--ink4); padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-tag">PrepOS</div>
+    <div class="brand-name">GATE EC</div>
+    <div class="brand-sub">2027 Edition</div>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-group-label">Overview</div>
+    <div class="nav-item active" data-page="dashboard" onclick="nav('dashboard')">
+      <span class="ni-icon">📊</span>
+      <span>Dashboard</span>
+    </div>
+
+    <div class="nav-group-label" style="margin-top:8px">Subjects</div>
+    <div class="nav-item" data-page="gate" onclick="nav('gate')">
+      <span class="ni-icon">⚡</span>
+      <span>GATE EC</span>
+      <span class="ni-badge" id="nb-gate">0</span>
+    </div>
+    <div class="nav-item" data-page="vlsi" onclick="nav('vlsi')">
+      <span class="ni-icon">🔬</span>
+      <span>VLSI Jobs</span>
+      <span class="ni-badge" id="nb-vlsi">0</span>
+    </div>
+    <div class="nav-item" data-page="cpp" onclick="nav('cpp')">
+      <span class="ni-icon">⚙️</span>
+      <span>C++</span>
+      <span class="ni-badge" id="nb-cpp">0</span>
+    </div>
+
+    <div class="nav-group-label" style="margin-top:8px">Tools</div>
+    <div class="nav-item" data-page="mock" onclick="nav('mock')">
+      <span class="ni-icon">📝</span>
+      <span>Mock Tests</span>
+    </div>
+    <div class="nav-item" data-page="resources" onclick="nav('resources')">
+      <span class="ni-icon">📚</span>
+      <span>References</span>
+    </div>
+    <div class="nav-item" data-page="diary" onclick="nav('diary')">
+      <span class="ni-icon">✍️</span>
+      <span>Daily Diary</span>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="streak-pill" onclick="nav('dashboard')">
+      🔥 <span id="streakPill">0 day streak</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ MAIN AREA ═══ -->
+<div class="main-area">
+
+<!-- ───────── DASHBOARD ───────── -->
+<div class="page active" id="page-dashboard">
+  <div class="page-topbar">
+    <div>
+      <div class="page-title">Command Center</div>
+      <div class="page-subtitle">Your complete GATE EC 2027 preparation overview</div>
+    </div>
+    <div class="page-actions">
+      <div id="todayDate" style="font-family:var(--m);font-size:11px;color:var(--fog)"></div>
+      <span id="saveStatusEl" style="font-family:var(--m);font-size:11px;white-space:nowrap">⚠️ Not connected</span>
+      <button class="btn btn-ghost btn-sm" onclick="exportData()" title="Download backup">📤 Backup</button>
+      <button class="btn btn-ghost btn-sm" onclick="importData()" title="Restore backup">📥 Restore</button>
+      <button class="btn btn-sky btn-sm" onclick="openSetup()">☁️ Connect Cloud</button>
+    </div>
+  </div>
+
+
+  <!-- Bin info bar (shown after connecting) -->
+  <div class="save-banner" id="binInfoBar" style="display:none">
+    ☁️ <span><b>Cloud connected!</b> Bin ID: <code id="binIdDisplay" style="font-family:var(--m);font-size:11px;color:var(--lime)"></code> — bookmark this page and open it from any browser. Your data syncs automatically.</span>
+    <span class="save-banner-close" onclick="document.getElementById('binInfoBar').style.display='none'">✕</span>
+  </div>
+  <!-- Not connected banner -->
+  <div class="save-banner" id="notConnectedBanner" style="background:rgba(255,184,48,0.07);border-color:rgba(255,184,48,0.25);color:var(--amber)">
+    💾 <span><b>Data saves locally in this browser.</b> Click <b>☁️ Connect Cloud</b> to also sync to Firebase so your data is safe across devices.</span>
+    <span class="save-banner-close" onclick="document.getElementById('notConnectedBanner').style.display='none'">✕</span>
+  </div>
+  <!-- Deadlines -->
+  <div class="deadline-row" id="deadlineRow"></div>
+
+  <!-- Hero stats -->
+  <div class="g3" style="margin-bottom:16px" id="heroStats"></div>
+
+  <!-- Today + Week -->
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">📋 Today's Tasks</div>
+        <span style="font-family:var(--m);font-size:10px;color:var(--fog)" id="todayDate2"></span>
+      </div>
+      <div id="todayTasksList"></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">📈 This Week</div>
+      </div>
+      <div class="week-chart" id="weekChart"></div>
+      <hr class="divider">
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <div><div style="font-family:var(--m);font-size:20px;font-weight:700;color:var(--lime)" id="wkTotal">0</div><div style="font-size:11px;color:var(--fog)">This week</div></div>
+        <div><div style="font-family:var(--m);font-size:20px;font-weight:700;color:var(--cyan)" id="moTotal">0</div><div style="font-size:11px;color:var(--fog)">This month</div></div>
+        <div><div style="font-family:var(--m);font-size:20px;font-weight:700;color:var(--amber)" id="allTotal">0</div><div style="font-size:11px;color:var(--fog)">All time</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline + Pending -->
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-head"><div class="card-title">🗓️ Auto Timeline</div></div>
+      <div id="timelineEl"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">⏳ Pending & Overdue</div></div>
+      <div class="pending-cloud" id="pendingCloud"></div>
+    </div>
+  </div>
+
+  <!-- Streak -->
+  <div class="card" id="streakCard">
+    <div class="card-head">
+      <div class="card-title">🔥 Yearly Consistency Streak</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <div><span style="font-family:var(--m);font-size:18px;font-weight:700;color:var(--amber)" id="curStreak">0</span><span style="font-size:10px;color:var(--fog);margin-left:4px">current</span></div>
+        <div><span style="font-family:var(--m);font-size:18px;font-weight:700;color:var(--lime)" id="maxStreak">0</span><span style="font-size:10px;color:var(--fog);margin-left:4px">longest</span></div>
+        <div><span style="font-family:var(--m);font-size:18px;font-weight:700;color:var(--sky)" id="actDays">0</span><span style="font-size:10px;color:var(--fog);margin-left:4px">active days</span></div>
+      </div>
+    </div>
+    <div class="cal-outer"><div class="cal-months" id="calMonths"></div></div>
+  </div>
+</div>
+
+<!-- ───────── GATE EC ───────── -->
+<div class="page" id="page-gate">
+  <div class="page-topbar">
+    <div>
+      <div class="page-title" style="color:var(--lime)">GATE EC 2027</div>
+      <div class="page-subtitle">Full syllabus — Target: complete by <strong>August 31, 2026</strong></div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-ghost btn-sm" onclick="openModal('secModal','gate')">+ Section</button>
+      <button class="btn btn-lime" onclick="openModal('taskModal','gate')">+ Add Task</button>
+    </div>
+  </div>
+  <div class="g4" style="margin-bottom:16px" id="gateStats"></div>
+  <div class="subj-shell">
+    <div>
+      <div class="sections-panel">
+        <div class="sp-head"><span>Sections</span><span style="font-family:var(--m);font-size:10px" id="gateSecCount">0</span></div>
+        <div id="gateSections"></div>
+      </div>
+      <button class="add-sec-btn" onclick="openModal('secModal','gate')">＋ Add Section</button>
+    </div>
+    <div class="task-panel">
+      <div class="tp-head">
+        <div class="tp-title" id="gateTPTitle">All Tasks</div>
+        <button class="btn btn-lime btn-sm" onclick="openModal('taskModal','gate')">+ Task</button>
+      </div>
+      <div class="tp-tabs" id="gateFilterTabs">
+        <div class="tp-tab active" onclick="setFilter('gate','all',this)">All</div>
+        <div class="tp-tab" onclick="setFilter('gate','daily',this)">Daily</div>
+        <div class="tp-tab" onclick="setFilter('gate','weekly',this)">Weekly</div>
+        <div class="tp-tab" onclick="setFilter('gate','monthly',this)">Monthly</div>
+        <div class="tp-tab" onclick="setFilter('gate','pending',this)">Overdue</div>
+      </div>
+      <div class="task-list" id="gateTaskList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── VLSI ───────── -->
+<div class="page" id="page-vlsi">
+  <div class="page-topbar">
+    <div>
+      <div class="page-title" style="color:var(--cyan)">VLSI Core Jobs</div>
+      <div class="page-subtitle" id="vlsiSubtitle">3-month intensive — target date loading...</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-ghost btn-sm" onclick="openModal('secModal','vlsi')">+ Section</button>
+      <button class="btn btn-cyan" onclick="openModal('taskModal','vlsi')">+ Add Task</button>
+    </div>
+  </div>
+  <div class="g4" style="margin-bottom:16px" id="vlsiStats"></div>
+  <div class="subj-shell">
+    <div>
+      <div class="sections-panel">
+        <div class="sp-head" style="border-bottom-color:rgba(61,232,232,0.2)"><span>Sections</span><span style="font-family:var(--m);font-size:10px" id="vlsiSecCount">0</span></div>
+        <div id="vlsiSections"></div>
+      </div>
+      <button class="add-sec-btn" onclick="openModal('secModal','vlsi')">＋ Add Section</button>
+    </div>
+    <div class="task-panel">
+      <div class="tp-head">
+        <div class="tp-title" id="vlsiTPTitle">All Tasks</div>
+        <button class="btn btn-cyan btn-sm" onclick="openModal('taskModal','vlsi')">+ Task</button>
+      </div>
+      <div class="tp-tabs">
+        <div class="tp-tab active" onclick="setFilter('vlsi','all',this)">All</div>
+        <div class="tp-tab" onclick="setFilter('vlsi','daily',this)">Daily</div>
+        <div class="tp-tab" onclick="setFilter('vlsi','weekly',this)">Weekly</div>
+        <div class="tp-tab" onclick="setFilter('vlsi','monthly',this)">Monthly</div>
+        <div class="tp-tab" onclick="setFilter('vlsi','pending',this)">Overdue</div>
+      </div>
+      <div class="task-list" id="vlsiTaskList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── C++ ───────── -->
+<div class="page" id="page-cpp">
+  <div class="page-topbar">
+    <div>
+      <div class="page-title" style="color:var(--amber)">C++ Mastery</div>
+      <div class="page-subtitle">Track your C++ learning progress systematically</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-ghost btn-sm" onclick="openModal('secModal','cpp')">+ Section</button>
+      <button class="btn btn-amber" onclick="openModal('taskModal','cpp')">+ Add Task</button>
+    </div>
+  </div>
+  <div class="g4" style="margin-bottom:16px" id="cppStats"></div>
+  <div class="subj-shell">
+    <div>
+      <div class="sections-panel">
+        <div class="sp-head" style="border-bottom-color:rgba(255,184,48,0.2)"><span>Sections</span><span style="font-family:var(--m);font-size:10px" id="cppSecCount">0</span></div>
+        <div id="cppSections"></div>
+      </div>
+      <button class="add-sec-btn" onclick="openModal('secModal','cpp')">＋ Add Section</button>
+    </div>
+    <div class="task-panel">
+      <div class="tp-head">
+        <div class="tp-title" id="cppTPTitle">All Tasks</div>
+        <button class="btn btn-amber btn-sm" onclick="openModal('taskModal','cpp')">+ Task</button>
+      </div>
+      <div class="tp-tabs">
+        <div class="tp-tab active" onclick="setFilter('cpp','all',this)">All</div>
+        <div class="tp-tab" onclick="setFilter('cpp','daily',this)">Daily</div>
+        <div class="tp-tab" onclick="setFilter('cpp','weekly',this)">Weekly</div>
+        <div class="tp-tab" onclick="setFilter('cpp','monthly',this)">Monthly</div>
+        <div class="tp-tab" onclick="setFilter('cpp','pending',this)">Overdue</div>
+      </div>
+      <div class="task-list" id="cppTaskList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── MOCK TESTS ───────── -->
+<div class="page" id="page-mock">
+  <div class="page-topbar">
+    <div>
+      <div class="page-title" style="color:var(--rose)">Mock Test Tracker</div>
+      <div class="page-subtitle">Log scores, track trends, estimate your GATE rank</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-rose" onclick="openModal('mockModal')">+ Log Test</button>
+    </div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="rank-hero">
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--fog);margin-bottom:8px">Estimated GATE Rank</div>
+      <div class="rank-num" id="estRank">—</div>
+      <div class="rank-label" id="estRankNote">Add mock tests to estimate rank</div>
+      <div class="rank-note">Based on GATE EC 2024–26 historical data</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">📈 Score Trend</div></div>
+      <div class="chart-box"><canvas id="scoreCanvas"></canvas></div>
+    </div>
+  </div>
+  <div class="g4" style="margin-bottom:16px" id="mockStats"></div>
+  <div id="mockList"></div>
+</div>
+
+<!-- ───────── RESOURCES ───────── -->
+<div class="page" id="page-resources">
+  <div class="page-topbar">
+    <div>
+      <div class="page-title" style="color:var(--iris)">Reference Library</div>
+      <div class="page-subtitle">Curated books, videos, and notes for GATE EC & VLSI</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-iris" onclick="openModal('resModal')">+ Add Resource</button>
+    </div>
+  </div>
+  <div class="tp-tabs" style="background:var(--ink2);border:1px solid var(--line);border-radius:8px;margin-bottom:16px;overflow:hidden">
+    <div class="tp-tab active" onclick="filterRes('all',this)" style="border-bottom-color:var(--iris)">All</div>
+    <div class="tp-tab" onclick="filterRes('gate',this)" style="border-bottom-color:var(--lime)">GATE EC</div>
+    <div class="tp-tab" onclick="filterRes('vlsi',this)" style="border-bottom-color:var(--cyan)">VLSI</div>
+    <div class="tp-tab" onclick="filterRes('cpp',this)" style="border-bottom-color:var(--amber)">C++</div>
+    <div class="tp-tab" onclick="filterRes('book',this)">Books</div>
+    <div class="tp-tab" onclick="filterRes('video',this)">Videos</div>
+    <div class="tp-tab" onclick="filterRes('notes',this)">Notes</div>
+  </div>
+  <div id="resList"></div>
+</div>
+
+<!-- ───────── DIARY ───────── -->
+<div class="page" id="page-diary">
+  <div class="page-topbar">
+    <div>
+      <div class="page-title" style="color:var(--sky)">Daily Diary</div>
+      <div class="page-subtitle">Reflect, record progress, and stay motivated every day</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-sky" onclick="newDiaryEntry()">+ New Entry</button>
+    </div>
+  </div>
+
+  <div class="diary-shell">
+    <!-- Past entries list -->
+    <div>
+      <div class="diary-sidebar">
+        <div class="diary-sb-head">
+          <span class="diary-sb-title">Entries</span>
+          <span style="font-family:var(--m);font-size:10px;color:var(--fog)" id="diaryCount">0</span>
+        </div>
+        <div id="diaryEntryList" style="max-height:600px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- Editor -->
+    <div class="diary-editor">
+      <div class="diary-toolbar">
+        <div class="diary-date-display" id="diaryEditorDate"></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:var(--fog)" id="diaryWordCount">0 words</span>
+          <button class="btn btn-ghost btn-xs" id="diaryDeleteBtn" onclick="deleteDiaryEntry()" style="display:none">🗑 Delete</button>
+        </div>
+      </div>
+
+      <div class="diary-content-area">
+        <input type="hidden" id="diaryCurrentId">
+        <input class="diary-title-input" id="diaryTitleInput" placeholder="Entry title... (optional)">
+
+        <div class="diary-section">
+          <div class="ds-label">📝 Today's Study Log</div>
+          <textarea class="diary-textarea" id="diaryStudy" placeholder="What did you study today? Hours spent, topics covered, sources used..."></textarea>
+        </div>
+
+        <div class="diary-section">
+          <div class="ds-label">💡 Key Learnings & Notes</div>
+          <textarea class="diary-textarea" id="diaryLearnings" placeholder="Important concepts, formulas, tricks you learned today..."></textarea>
+        </div>
+
+        <div class="diary-section">
+          <div class="ds-label">🎯 Goals for Tomorrow</div>
+          <textarea class="diary-textarea" id="diaryTomorrow" placeholder="What will you focus on tomorrow? Set specific targets..."></textarea>
+        </div>
+
+        <div class="diary-section">
+          <div class="ds-label">💬 Thoughts & Reflections</div>
+          <textarea class="diary-textarea" id="diaryReflection" placeholder="How are you feeling? Challenges faced, wins celebrated..."></textarea>
+        </div>
+
+        <div class="diary-section">
+          <div class="ds-label">😊 Mood</div>
+          <div class="mood-selector">
+            <div class="mood-btn" onclick="selectMood('great',this)">🚀 Great</div>
+            <div class="mood-btn" onclick="selectMood('good',this)">😊 Good</div>
+            <div class="mood-btn" onclick="selectMood('okay',this)">😐 Okay</div>
+            <div class="mood-btn" onclick="selectMood('bad',this)">😞 Bad</div>
+            <div class="mood-btn" onclick="selectMood('tired',this)">😴 Tired</div>
+          </div>
+        </div>
+
+        <div class="diary-section">
+          <div class="ds-label">📚 Topics Covered Today</div>
+          <div class="topics-input-row">
+            <input class="fi" id="topicInput" placeholder="Type a topic and press Enter..." style="border-radius:7px" onkeydown="if(event.key==='Enter'){addDiaryTopic();event.preventDefault()}">
+            <button class="btn btn-sky btn-sm" onclick="addDiaryTopic()">Add</button>
+          </div>
+          <div class="topics-pills" id="topicsPills"></div>
+        </div>
+
+        <div class="diary-section">
+          <div class="ds-label">⏱️ Study Hours Today</div>
+          <input type="number" class="fi" id="diaryHours" placeholder="e.g., 4.5" min="0" max="24" step="0.5" style="max-width:160px">
+        </div>
+      </div>
+
+      <div class="diary-save-bar">
+        <div class="diary-saved" id="diarySavedMsg"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="clearDiaryEditor()">Clear</button>
+          <button class="btn btn-sky" onclick="saveDiaryEntry()">💾 Save Entry</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main-area -->
+</div><!-- /app-shell -->
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Task Modal -->
+<div class="overlay" id="taskModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="taskModalTitle">Add Task</div>
+      <button class="modal-close" onclick="closeModal('taskModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="tDomain">
+      <div class="fg">
+        <label>Task Name *</label>
+        <input class="fi" id="tName" placeholder="e.g., Solve 20 Network Theory PYQs">
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Section</label>
+          <select class="fs" id="tSection"></select>
+        </div>
+        <div class="fg">
+          <label>Type</label>
+          <select class="fs" id="tType">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Due Date</label>
+          <input type="date" class="fi" id="tDue">
+        </div>
+        <div class="fg">
+          <label>Priority</label>
+          <select class="fs" id="tPriority">
+            <option value="high">🔴 High</option>
+            <option value="medium" selected>🟡 Medium</option>
+            <option value="low">🟢 Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Notes</label>
+        <textarea class="fta" id="tNotes" placeholder="Any extra notes..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('taskModal')">Cancel</button>
+      <button class="btn btn-lime" id="taskSaveBtn" onclick="saveTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Section Modal -->
+<div class="overlay" id="secModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Add Section</div>
+      <button class="modal-close" onclick="closeModal('secModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sDomain">
+      <div class="fg">
+        <label>Section Name *</label>
+        <input class="fi" id="sName" placeholder="e.g., Network Theory, CMOS Design...">
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Est. Total Topics</label>
+          <input type="number" class="fi" id="sTopics" placeholder="e.g., 12" min="1">
+        </div>
+        <div class="fg">
+          <label>Target Deadline</label>
+          <input type="date" class="fi" id="sDeadline">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('secModal')">Cancel</button>
+      <button class="btn btn-lime" onclick="saveSection()">Add Section</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mock Modal -->
+<div class="overlay" id="mockModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Log Mock Test</div>
+      <button class="modal-close" onclick="closeModal('mockModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <label>Test Name *</label>
+        <input class="fi" id="mName" placeholder="e.g., GATE Mock #3 — Made Easy">
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Score (out of 100) *</label>
+          <input type="number" class="fi" id="mScore" min="0" max="100" placeholder="e.g., 65">
+        </div>
+        <div class="fg">
+          <label>Date</label>
+          <input type="date" class="fi" id="mDate">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Platform</label>
+          <select class="fs" id="mPlatform">
+            <option>Made Easy</option><option>ACE Academy</option>
+            <option>GATE Academy</option><option>TestBook</option>
+            <option>Previous Year Paper</option><option>Self-Made</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Time Taken (mins)</label>
+          <input type="number" class="fi" id="mTime" placeholder="180">
+        </div>
+      </div>
+      <div class="fg">
+        <label>Weak Areas (comma separated)</label>
+        <input class="fi" id="mWeak" placeholder="e.g., Control Systems, EMT">
+      </div>
+      <div class="fg">
+        <label>Notes</label>
+        <textarea class="fta" id="mNotes" placeholder="Observations, strategy notes..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('mockModal')">Cancel</button>
+      <button class="btn btn-rose" onclick="saveMock()">Log Test</button>
+    </div>
+  </div>
+</div>
+
+<!-- Resource Modal -->
+<div class="overlay" id="resModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Add Reference</div>
+      <button class="modal-close" onclick="closeModal('resModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <label>Title *</label>
+        <input class="fi" id="rTitle" placeholder="e.g., VLSI Design — Weste & Harris">
+      </div>
+      <div class="fg">
+        <label>Description</label>
+        <input class="fi" id="rDesc" placeholder="Short description...">
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Domain</label>
+          <select class="fs" id="rDomain">
+            <option value="gate">GATE EC</option>
+            <option value="vlsi">VLSI</option>
+            <option value="cpp">C++</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Type</label>
+          <select class="fs" id="rType">
+            <option value="book">📚 Book</option>
+            <option value="video">🎥 Video</option>
+            <option value="notes">📄 Notes/PDF</option>
+            <option value="practice">✏️ Practice</option>
+            <option value="website">🌐 Website</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label>URL (optional)</label>
+        <input class="fi" id="rUrl" placeholder="https://...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('resModal')">Cancel</button>
+      <button class="btn btn-iris" onclick="saveResource()">Add Resource</button>
+    </div>
+  </div>
+</div>
+
+<!-- Setup / Connect Modal -->
+<div class="overlay" id="setupModal">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-head">
+      <div class="modal-title">☁️ Connect Firebase (Free)</div>
+      <button class="modal-close" onclick="closeModal('setupModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:rgba(92,200,255,0.07);border:1px solid rgba(92,200,255,0.2);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:12px;color:var(--mist);line-height:1.9">
+        <b style="color:var(--sky)">Setup (free, ~3 minutes):</b><br>
+        1. Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--iris)">console.firebase.google.com</a> → Add project → any name<br>
+        2. <b>Build → Realtime Database → Create database → Start in test mode</b><br>
+        3. Copy your database URL: <code style="background:var(--ink4);padding:1px 5px;border-radius:3px">https://YOUR-PROJECT-default-rtdb.firebaseio.com</code><br>
+        4. ⚠️ <b style="color:var(--amber)">Fix the Rules</b> (required!): In Firebase → <b>Realtime Database → Rules</b> tab → replace with:<br>
+        <code style="background:var(--ink4);padding:4px 8px;border-radius:4px;display:block;margin:6px 0;color:var(--lime)">{ "rules": { ".read": true, ".write": true } }</code>
+        Click <b>Publish</b>. Then paste your URL below and connect.
+      </div>
+      <div class="fg">
+        <label>Firebase Database URL *</label>
+        <input class="fi" id="fbUrl" placeholder="https://your-project-default-rtdb.firebaseio.com" style="font-family:var(--m);font-size:11px">
+      </div>
+      <div class="fg" style="margin-top:12px">
+        <label>Data Path <span style="color:var(--fog)">(keep default unless you share the DB)</span></label>
+        <input class="fi" id="fbPath" value="/prepos" placeholder="/prepos" style="font-family:var(--m);font-size:12px">
+      </div>
+      <div class="fg" style="margin-top:12px">
+        <label>Auth Token <span style="color:var(--fog)">(leave blank if using test mode)</span></label>
+        <input class="fi" id="fbToken" placeholder="optional — only needed if you add security rules" style="font-family:var(--m);font-size:12px">
+      </div>
+      <div style="margin-top:12px;padding:10px 14px;background:rgba(184,255,92,0.05);border:1px solid rgba(184,255,92,0.15);border-radius:8px;font-size:11px;color:var(--fog)">
+        ✅ Firebase test mode is open for 30 days. After that, add a simple rule to keep it open, or just reset it — your data stays.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('setupModal')">Cancel</button>
+      <button class="btn btn-sky" id="fbConnectBtn" onclick="connectFirebase()">Connect & Sync ☁️</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toasts" id="toastEl"></div>
+
+<!-- ═══════════════════ SCRIPT ═══════════════════ -->
+<script>
+// ─────────── STORAGE — Firebase Realtime Database (CORS-safe, works from file://) ───────────
+// Uses Firebase REST API directly — no SDK, no CORS issues, works from local files.
+// Free tier: 1GB storage, 10GB/month transfer — more than enough for study data.
+
+const FB_LS_URL  = 'prepos_firebase_url';   // stored in localStorage
+const FB_LS_PATH = 'prepos_firebase_path';  // e.g. /users/abc123/data
+const FB_LS_TOKEN= 'prepos_firebase_token'; // optional auth token
+
+let _fbUrl   = '';   // e.g. https://YOUR-PROJECT-default-rtdb.firebaseio.com
+let _fbPath  = '';   // e.g. /prepos
+let _fbToken = '';
+let _saveTimer = null;
+
+/* ── Load credentials from localStorage ── */
+function loadCreds() {
+  _fbUrl   = localStorage.getItem(FB_LS_URL)   || '';
+  _fbPath  = localStorage.getItem(FB_LS_PATH)  || '/prepos';
+  _fbToken = localStorage.getItem(FB_LS_TOKEN) || '';
+}
+
+function saveCreds(url, path, token) {
+  _fbUrl = url; _fbPath = path || '/prepos'; _fbToken = token || '';
+  localStorage.setItem(FB_LS_URL,   _fbUrl);
+  localStorage.setItem(FB_LS_PATH,  _fbPath);
+  localStorage.setItem(FB_LS_TOKEN, _fbToken);
+}
+
+function fbEndpoint() {
+  const auth = _fbToken ? `?auth=${_fbToken}` : '';
+  return `${_fbUrl.replace(/\/$/, '')}${_fbPath}.json${auth}`;
+}
+
+/* ── Write to Firebase ── */
+async function fbWrite(data) {
+  const res = await fetch(fbEndpoint(), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Firebase write failed (${res.status}): ${err}`);
+  }
+  return res.json();
+}
+
+/* ── Read from Firebase ── */
+async function fbRead() {
+  const res = await fetch(fbEndpoint());
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Firebase read failed (${res.status}): ${err}`);
+  }
+  return res.json();
+}
+
+/* ── Status indicator ── */
+function setSaveStatus(status) {
+  const el = document.getElementById('saveStatusEl');
+  if (!el) return;
+  const map = {
+    saved:   { text: '☁️ Synced',         color: 'var(--lime)'  },
+    saving:  { text: '⏳ Saving…',          color: 'var(--amber)' },
+    offline: { text: '💾 Local only',       color: 'var(--fog)'   },
+    error:   { text: '❌ Sync failed',       color: 'var(--rose)'  },
+    loading: { text: '☁️ Loading…',          color: 'var(--sky)'   },
+  };
+  const s = map[status] || map.offline;
+  el.textContent = s.text;
+  el.style.color = s.color;
+}
+
+/* ── Save: localStorage immediately + Firebase debounced ── */
+function save(d) {
+  try { localStorage.setItem('prepos_data_local', JSON.stringify(d)); } catch(e) {}
+  clearTimeout(_saveTimer);
+  if (_fbUrl) {
+    setSaveStatus('saving');
+    _saveTimer = setTimeout(() => fbWrite(d)
+      .then(() => setSaveStatus('saved'))
+      .catch(e => { setSaveStatus('error'); console.error('FB save:', e); }), 1200);
+  } else {
+    setSaveStatus('offline');
+  }
+}
+
+/* ── Local fallback ── */
+function loadLocal() {
+  try { const r = localStorage.getItem('prepos_data_local'); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+}
+
+/* ── Export backup ── */
+function exportData() {
+  const blob = new Blob([JSON.stringify(D, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'PrepOS_backup_' + new Date().toISOString().split('T')[0] + '.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Backup downloaded ✓','ts');
+}
+
+/* ── Import backup ── */
+function importData() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const imported = JSON.parse(ev.target.result);
+        if (!imported.tasks || !imported.sections) { toast('Invalid backup file','te'); return; }
+        D = imported; save(D); nav('dashboard');
+        toast('Data imported ✓','ts');
+        refreshDash(); updateNavBadges();
+      } catch(err) { toast('Import failed','te'); }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
+/* ── Open setup modal ── */
+function openSetup() { document.getElementById('setupModal').classList.add('open'); }
+
+/* ── Connect to Firebase ── */
+async function connectFirebase() {
+  // Clean the URL — strip whitespace, invisible chars, trailing slashes
+  let url = document.getElementById('fbUrl').value.trim().replace(/[​-‍﻿]/g,'').replace(/\/+$/, '');
+  const path  = (document.getElementById('fbPath').value.trim() || '/prepos').replace(/\/+$/, '');
+  const token = document.getElementById('fbToken').value.trim();
+
+  // Clear any previous error
+  const errEl = document.getElementById('fbErrorMsg');
+  if (errEl) errEl.textContent = '';
+
+  if (!url) { showFbError('Please paste your Firebase Database URL.'); return; }
+
+  // Auto-fix common mistakes: add https:// if missing
+  if (!url.startsWith('http')) url = 'https://' + url;
+
+  // Validate it looks like a Firebase URL
+  if (!url.includes('firebaseio.com') && !url.includes('firebase')) {
+    showFbError('That doesn't look like a Firebase URL. It should end with firebaseio.com — e.g. https://your-project-default-rtdb.firebaseio.com');
+    return;
+  }
+
+  const btn = document.getElementById('fbConnectBtn');
+  btn.textContent = 'Connecting…'; btn.disabled = true;
+  setSaveStatus('loading');
+
+  // Set creds for the request
+  _fbUrl = url; _fbPath = path; _fbToken = token;
+
+  // Build and show the exact URL being tested so user can verify
+  const endpoint = fbEndpoint();
+  showFbError('Testing: ' + endpoint + ' …', 'info');
+
+  try {
+    const existing = await fbRead();
+
+    if (existing && existing.tasks) {
+      D = existing;
+      if (!D.filters) D.filters = {gate:'all',vlsi:'all',cpp:'all'};
+      if (!D.activeSection) D.activeSection = {gate:null,vlsi:null,cpp:null};
+      if (!D.diary) D.diary = [];
+      if (!D.activity) D.activity = {};
+      if (!D.completedDates) D.completedDates = {};
+      if (!D.resources) D.resources = defaultResources();
+      toast('Connected! Existing data loaded ☁️','ts');
+    } else {
+      await fbWrite(D);
+      toast('Connected! Data now syncing to Firebase ☁️','ts');
+    }
+
+    saveCreds(url, path, token);
+    document.getElementById('setupModal').classList.remove('open');
+    setSaveStatus('saved');
+    document.getElementById('notConnectedBanner').style.display = 'none';
+    document.getElementById('binInfoBar').style.display = 'flex';
+    document.getElementById('binIdDisplay').textContent = url + path;
+    refreshDash(); updateNavBadges();
+
+  } catch(e) {
+    const raw = e.message || String(e);
+    let friendly = '';
+
+    if (raw.toLowerCase().includes('failed to fetch') || raw.toLowerCase().includes('networkerror') || raw.toLowerCase().includes('load')) {
+      friendly = '🔴 FAILED TO FETCH — Firebase blocked the request.
+
+'
+        + 'Most likely cause: Rules are still locked.
+
+'
+        + 'Fix: Firebase Console → Realtime Database → Rules tab → replace everything with:
+'
+        + '{ "rules": { ".read": true, ".write": true } }
+'
+        + '→ click Publish → try connecting again.
+
+'
+        + 'URL tested: ' + endpoint;
+    } else if (raw.includes('401') || raw.includes('403') || raw.toLowerCase().includes('permission')) {
+      friendly = '🔴 PERMISSION DENIED
+
+Go to Firebase → Realtime Database → Rules → set .read and .write to true → Publish.';
+    } else if (raw.includes('404')) {
+      friendly = '🔴 DATABASE NOT FOUND
+
+Make sure you created a Realtime Database (not Firestore) at:
+console.firebase.google.com → Build → Realtime Database';
+    } else {
+      friendly = '🔴 ERROR: ' + raw + '
+
+URL tested: ' + endpoint;
+    }
+
+    showFbError(friendly);
+    setSaveStatus('error');
+    _fbUrl = ''; _fbPath = ''; _fbToken = '';
+    loadCreds();
+  }
+  btn.textContent = 'Connect & Sync ☁️'; btn.disabled = false;
+}
+
+function showFbError(msg, type) {
+  let el = document.getElementById('fbErrorMsg');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'fbErrorMsg';
+    document.querySelector('#setupModal .modal-body').appendChild(el);
+  }
+  const isInfo = type === 'info';
+  el.style.cssText = 'margin-top:12px;padding:12px 14px;border-radius:8px;font-size:11px;line-height:1.8;white-space:pre-wrap;word-break:break-all;'
+    + (isInfo
+      ? 'background:rgba(92,200,255,0.07);border:1px solid rgba(92,200,255,0.2);color:var(--sky)'
+      : 'background:rgba(255,92,122,0.08);border:1px solid rgba(255,92,122,0.3);color:var(--rose)');
+  el.textContent = msg;
+}
+
+/* ── INIT ── */
+loadCreds();
+let D = loadLocal() || defaults();
+
+function defaults() {
+  const today = new Date().toISOString().split('T')[0];
+  const vlsiEnd = new Date(); vlsiEnd.setMonth(vlsiEnd.getMonth()+3);
+  return {
+    tasks:[], sections:{
+      gate:[
+        {id:'sg1',name:'Engineering Maths',topics:14,deadline:'2026-03-31',domain:'gate'},
+        {id:'sg2',name:'Network Theory',topics:10,deadline:'2026-04-30',domain:'gate'},
+        {id:'sg3',name:'Electronic Devices',topics:8,deadline:'2026-05-15',domain:'gate'},
+        {id:'sg4',name:'Analog Circuits',topics:12,deadline:'2026-05-31',domain:'gate'},
+        {id:'sg5',name:'Digital Circuits',topics:9,deadline:'2026-06-15',domain:'gate'},
+        {id:'sg6',name:'Control Systems',topics:10,deadline:'2026-06-30',domain:'gate'},
+        {id:'sg7',name:'Signals & Systems',topics:11,deadline:'2026-07-15',domain:'gate'},
+        {id:'sg8',name:'Communications',topics:10,deadline:'2026-07-31',domain:'gate'},
+        {id:'sg9',name:'Electromagnetics',topics:8,deadline:'2026-08-15',domain:'gate'},
+        {id:'sg10',name:'General Aptitude',topics:6,deadline:'2026-08-01',domain:'gate'},
+      ],
+      vlsi:[
+        {id:'sv1',name:'CMOS Technology',topics:8,deadline:vlsiEnd.toISOString().split('T')[0],domain:'vlsi'},
+        {id:'sv2',name:'Digital VLSI Design',topics:10,deadline:vlsiEnd.toISOString().split('T')[0],domain:'vlsi'},
+        {id:'sv3',name:'Analog & Mixed-Signal',topics:9,deadline:vlsiEnd.toISOString().split('T')[0],domain:'vlsi'},
+        {id:'sv4',name:'Physical Design',topics:7,deadline:vlsiEnd.toISOString().split('T')[0],domain:'vlsi'},
+        {id:'sv5',name:'Verilog/SystemVerilog',topics:8,deadline:vlsiEnd.toISOString().split('T')[0],domain:'vlsi'},
+        {id:'sv6',name:'DFT & Verification',topics:6,deadline:vlsiEnd.toISOString().split('T')[0],domain:'vlsi'},
+      ],
+      cpp:[
+        {id:'sc1',name:'OOP & Fundamentals',topics:8,deadline:'',domain:'cpp'},
+        {id:'sc2',name:'STL & Templates',topics:7,deadline:'',domain:'cpp'},
+        {id:'sc3',name:'DSA in C++',topics:10,deadline:'',domain:'cpp'},
+        {id:'sc4',name:'Modern C++11/17/20',topics:6,deadline:'',domain:'cpp'},
+        {id:'sc5',name:'System Programming',topics:5,deadline:'',domain:'cpp'},
+      ]
+    },
+    mocks:[], resources: defaultResources(),
+    activity:{}, completedDates:{},
+    vlsiStart: today,
+    filters:{gate:'all',vlsi:'all',cpp:'all'},
+    activeSection:{gate:null,vlsi:null,cpp:null},
+    diary:[]
+  };
+}
+function defaultResources(){
+  return [
+    {id:'r1',title:'GATE EC Solved Papers — Arihant',desc:'30 years of solved GATE EC papers',domain:'gate',type:'book',url:''},
+    {id:'r2',title:'Engineering Mathematics — B.S. Grewal',desc:'Comprehensive GATE maths coverage',domain:'gate',type:'book',url:''},
+    {id:'r3',title:'Electronic Devices — Sedra/Smith',desc:'Standard reference for Devices & Circuits',domain:'gate',type:'book',url:''},
+    {id:'r4',title:'Control Systems — Nagrath & Gopal',desc:'Most popular GATE Control Systems book',domain:'gate',type:'book',url:''},
+    {id:'r5',title:'Signals & Systems — Oppenheim',desc:'The definitive S&S reference',domain:'gate',type:'book',url:''},
+    {id:'r6',title:'VLSI Design — Weste & Harris',desc:'CMOS VLSI Design: Circuits and Systems Perspective',domain:'vlsi',type:'book',url:''},
+    {id:'r7',title:'Digital Integrated Circuits — Rabaey',desc:'Fundamental VLSI textbook',domain:'vlsi',type:'book',url:''},
+    {id:'r8',title:'SystemVerilog for Design — Sutherland',desc:'RTL design and verification in SystemVerilog',domain:'vlsi',type:'book',url:''},
+    {id:'r9',title:'The C++ Programming Language — Stroustrup',desc:"Definitive C++ reference by its creator",domain:'cpp',type:'book',url:''},
+    {id:'r10',title:'Effective Modern C++ — Scott Meyers',desc:'42 ways to improve your C++11/14',domain:'cpp',type:'book',url:''},
+    {id:'r11',title:'NPTEL — GATE EC Video Lectures',desc:'Free NPTEL lectures covering full GATE EC syllabus',domain:'gate',type:'video',url:'https://nptel.ac.in'},
+    {id:'r12',title:'Gate Smashers — YouTube',desc:'Free GATE EC video content, highly recommended',domain:'gate',type:'video',url:'https://youtube.com/@GateSmashers'},
+    {id:'r13',title:'Neso Academy — EC & CS',desc:'Clear explanations for GATE topics',domain:'gate',type:'video',url:'https://youtube.com/@nesoacademy'},
+  ];
+}
+
+
+// ─────────── NAV ───────────
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+  if(page==='gate') renderSubject('gate');
+  if(page==='vlsi') renderSubject('vlsi');
+  if(page==='cpp')  renderSubject('cpp');
+  if(page==='mock') renderMock();
+  if(page==='resources') renderResources('all');
+  if(page==='diary') renderDiary();
+}
+
+// ─────────── MODAL ───────────
+function openModal(id, domain) {
+  const today = new Date().toISOString().split('T')[0];
+  if(id==='taskModal'){
+    document.getElementById('tDomain').value = domain;
+    document.getElementById('taskModalTitle').textContent = 'Add Task — '+domain.toUpperCase();
+    document.getElementById('taskSaveBtn').className = `btn btn-${domain==='gate'?'lime':domain==='vlsi'?'cyan':'amber'}`;
+    document.getElementById('tName').value=''; document.getElementById('tNotes').value='';
+    document.getElementById('tDue').value=today;
+    const sel=document.getElementById('tSection');
+    sel.innerHTML='<option value="">— General —</option>';
+    (D.sections[domain]||[]).forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.name;sel.appendChild(o);});
+  }
+  if(id==='secModal'){
+    document.getElementById('sDomain').value=domain;
+    ['sName','sDeadline','sTopics'].forEach(f=>document.getElementById(f).value='');
+  }
+  if(id==='mockModal'){
+    document.getElementById('mDate').value=today;
+    ['mName','mScore','mTime','mWeak','mNotes'].forEach(f=>document.getElementById(f).value='');
+  }
+  if(id==='resModal') ['rTitle','rDesc','rUrl'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// ─────────── TASK CRUD ───────────
+function saveTask(){
+  const n=document.getElementById('tName').value.trim();
+  if(!n){toast('Task name required','te');return;}
+  const domain=document.getElementById('tDomain').value;
+  D.tasks.push({
+    id:'t'+Date.now(), name:n, domain,
+    section:document.getElementById('tSection').value,
+    type:document.getElementById('tType').value,
+    due:document.getElementById('tDue').value,
+    priority:document.getElementById('tPriority').value,
+    notes:document.getElementById('tNotes').value,
+    done:false, createdAt:new Date().toISOString(), completedAt:null
+  });
+  save(D); closeModal('taskModal');
+  toast('Task added ✓','ts');
+  renderSubject(domain); refreshDash();
+}
+
+function toggleTask(id){
+  const t=D.tasks.find(x=>x.id===id); if(!t)return;
+  t.done=!t.done; t.completedAt=t.done?new Date().toISOString():null;
+  const dk=new Date().toISOString().split('T')[0];
+  if(t.done){ D.activity[dk]=(D.activity[dk]||0)+1; if(!D.completedDates[dk])D.completedDates[dk]=[]; D.completedDates[dk].push(id); }
+  else { if(D.activity[dk]>0)D.activity[dk]--; if(D.completedDates[dk])D.completedDates[dk]=D.completedDates[dk].filter(i=>i!==id); }
+  save(D);
+  renderSubject(t.domain); refreshDash();
+}
+
+function deleteTask(id){
+  const t=D.tasks.find(x=>x.id===id); if(!t)return;
+  D.tasks=D.tasks.filter(x=>x.id!==id); save(D);
+  toast('Task deleted','ti'); renderSubject(t.domain); refreshDash();
+}
+
+// ─────────── SECTION CRUD ───────────
+function saveSection(){
+  const n=document.getElementById('sName').value.trim();
+  if(!n){toast('Name required','te');return;}
+  const dom=document.getElementById('sDomain').value;
+  if(!D.sections[dom])D.sections[dom]=[];
+  D.sections[dom].push({id:'s'+Date.now(),name:n,topics:parseInt(document.getElementById('sTopics').value)||5,deadline:document.getElementById('sDeadline').value,domain:dom});
+  save(D); closeModal('secModal'); toast('Section added ✓','ts');
+  renderSubject(dom); refreshDash();
+}
+function deleteSection(domain,id){
+  D.sections[domain]=(D.sections[domain]||[]).filter(s=>s.id!==id);
+  D.tasks=D.tasks.filter(t=>t.section!==id); save(D);
+  renderSubject(domain); refreshDash(); toast('Section removed','ti');
+}
+
+// ─────────── SUBJECT RENDER ───────────
+const dColors={gate:'var(--lime)',vlsi:'var(--cyan)',cpp:'var(--amber)'};
+const dFills={gate:'pf-lime',vlsi:'pf-cyan',cpp:'pf-amber'};
+const dChecked={gate:'checked',vlsi:'checked-vlsi',cpp:'checked-cpp'};
+
+function renderSubject(d){
+  renderSections(d); renderTasks(d); renderSubjectStats(d);
+  updateNavBadges();
+}
+
+function renderSections(d){
+  const cont=document.getElementById(d+'Sections');
+  const secs=D.sections[d]||[];
+  const active=D.activeSection[d];
+  document.getElementById(d+'SecCount').textContent=secs.length;
+  if(!secs.length){cont.innerHTML='<div style="padding:14px 16px;font-size:12px;color:var(--fog)">No sections yet</div>';return;}
+  cont.innerHTML=secs.map(s=>{
+    const tasks=D.tasks.filter(t=>t.domain===d&&t.section===s.id);
+    const done=tasks.filter(t=>t.done).length;
+    const pct=tasks.length?Math.round(done/tasks.length*100):0;
+    const isActive=active===s.id;
+    const actCls=d==='gate'?'active':d==='vlsi'?'active-vlsi':'active-cpp';
+    return `<div class="section-row ${isActive?actCls:''}" onclick="selectSection('${d}','${s.id}')">
+      <div style="flex:1;min-width:0">
+        <div class="sr-name">${s.name}</div>
+        <div class="sr-bar"><div class="sr-bar-fill ${dFills[d]}" style="width:${pct}%"></div></div>
+      </div>
+      <span class="sr-pct">${pct}%</span>
+      <button class="icon-btn del" onclick="event.stopPropagation();deleteSection('${d}','${s.id}')">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function selectSection(d,id){
+  D.activeSection[d]=D.activeSection[d]===id?null:id;
+  D.filters[d]='all'; save(D);
+  renderSubject(d);
+  const sec=D.activeSection[d]?(D.sections[d]||[]).find(s=>s.id===id):null;
+  document.getElementById(d+'TPTitle').textContent=sec?sec.name:'All Tasks';
+}
+
+function setFilter(d,f,el){
+  D.filters[d]=f; D.activeSection[d]=null; save(D);
+  el.closest('.tp-tabs').querySelectorAll('.tp-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(d+'TPTitle').textContent=f.charAt(0).toUpperCase()+f.slice(1)+' Tasks';
+  renderTasks(d); renderSections(d);
+}
+
+function renderTasks(d){
+  const cont=document.getElementById(d+'TaskList');
+  const f=D.filters[d]||'all';
+  const activeSec=D.activeSection[d];
+  const today=new Date().toISOString().split('T')[0];
+  let tasks=D.tasks.filter(t=>t.domain===d);
+  if(activeSec) tasks=tasks.filter(t=>t.section===activeSec);
+  else {
+    if(f==='daily')   tasks=tasks.filter(t=>t.type==='daily');
+    else if(f==='weekly')  tasks=tasks.filter(t=>t.type==='weekly');
+    else if(f==='monthly') tasks=tasks.filter(t=>t.type==='monthly');
+    else if(f==='pending') tasks=tasks.filter(t=>!t.done&&t.due&&t.due<today);
+  }
+  tasks.sort((a,b)=>{if(a.done!==b.done)return a.done?1:-1;if(a.due&&b.due)return a.due.localeCompare(b.due);return 0;});
+  if(!tasks.length){
+    cont.innerHTML=`<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">${f==='pending'?'No overdue tasks!':'No tasks here yet'}</div><button class="btn btn-ghost btn-sm" onclick="openModal('taskModal','${d}')">+ Add Task</button></div>`;
+    return;
+  }
+  const ck=dChecked[d];
+  cont.innerHTML=tasks.map(t=>{
+    const sec=t.section?(D.sections[d]||[]).find(s=>s.id===t.section):null;
+    const overdue=!t.done&&t.due&&t.due<today;
+    return `<div class="task-row ${t.done?'done':''}">
+      <div class="tcb ${t.done?ck:''}" onclick="toggleTask('${t.id}')"></div>
+      <div class="tr-body">
+        <div class="tr-name">${t.name}</div>
+        <div class="tr-meta">
+          <span class="chip chip-${t.type}">${t.type}</span>
+          ${sec?`<span class="chip chip-sec">${sec.name}</span>`:''}
+          ${t.priority==='high'?'<span class="chip chip-high">🔴 HIGH</span>':''}
+          ${overdue?'<span class="chip chip-overdue">⚠️ OVERDUE</span>':''}
+          ${t.done?'<span class="chip chip-done">✓ done</span>':''}
+          ${t.due?`<span class="chip-date">${overdue?'⚠️ ':''} ${fmtDate(t.due)}</span>`:''}
+        </div>
+        ${t.notes?`<div style="font-size:11px;color:var(--fog);margin-top:4px">${t.notes}</div>`:''}
+      </div>
+      <div class="tr-actions">
+        <button class="icon-btn del" onclick="deleteTask('${t.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSubjectStats(d){
+  const cont=document.getElementById(d+'Stats');
+  const tasks=D.tasks.filter(t=>t.domain===d);
+  const done=tasks.filter(t=>t.done).length;
+  const today=new Date().toISOString().split('T')[0];
+  const overdue=tasks.filter(t=>!t.done&&t.due&&t.due<today).length;
+  const todayT=tasks.filter(t=>t.due===today);
+  const pct=tasks.length?Math.round(done/tasks.length*100):0;
+  const c=dColors[d]; const f=dFills[d];
+  cont.innerHTML=`
+    <div class="stat-tile st-${d==='gate'?'gate':d==='vlsi'?'vlsi':'cpp'}">
+      <div class="stat-num" style="color:${c}">${pct}%</div>
+      <div class="stat-label">Progress</div>
+      <div class="pbar"><div class="pbar-fill ${f}" style="width:${pct}%"></div></div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-num" style="color:${c}">${done}/${tasks.length}</div>
+      <div class="stat-label">Tasks Done</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-num" style="color:var(--rose)">${overdue}</div>
+      <div class="stat-label">Overdue</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-num" style="color:var(--amber)">${todayT.filter(t=>t.done).length}/${todayT.length||0}</div>
+      <div class="stat-label">Today's Tasks</div>
+    </div>`;
+}
+
+// ─────────── DASHBOARD ───────────
+function refreshDash(){
+  updateDeadlines(); updateHeroStats(); updateTodayTasks();
+  updateWeekChart(); updateTimeline(); updatePending();
+  updateStreakCal(); updateStreakStats(); updateNavBadges();
+}
+
+function updateDeadlines(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const diff=d=>Math.max(0,Math.round((d-today)/86400000));
+  const gate27=new Date('2027-02-01');
+  const syllabus=new Date('2026-08-31');
+  const vlsiEnd=new Date(D.vlsiStart); vlsiEnd.setMonth(vlsiEnd.getMonth()+3);
+  const todayStr=today.toISOString().split('T')[0];
+  const pendingToday=D.tasks.filter(t=>!t.done&&t.due===todayStr).length;
+  document.getElementById('deadlineRow').innerHTML=`
+    <div class="dl-card"><div class="dl-num" style="color:var(--lime)">${diff(gate27)}</div><div class="dl-label">Days to GATE 2027</div></div>
+    <div class="dl-card"><div class="dl-num" style="color:var(--amber)">${diff(syllabus)}</div><div class="dl-label">Days to Aug 31 Deadline</div></div>
+    <div class="dl-card"><div class="dl-num" style="color:var(--cyan)">${diff(vlsiEnd)}</div><div class="dl-label">Days to VLSI Target</div></div>
+    <div class="dl-card"><div class="dl-num" style="color:var(--rose)">${pendingToday}</div><div class="dl-label">Today's Pending Tasks</div></div>`;
+  document.getElementById('vlsiSubtitle').textContent=`3-month intensive — target: ${fmtDate(vlsiEnd.toISOString().split('T')[0])}`;
+}
+
+function calcProg(d){
+  const t=D.tasks.filter(x=>x.domain===d);
+  const done=t.filter(x=>x.done).length;
+  return {done,total:t.length,pct:t.length?Math.round(done/t.length*100):0};
+}
+
+function getPace(d){
+  const {pct}=calcProg(d);
+  const today=new Date(); today.setHours(0,0,0,0);
+  const ends={gate:new Date('2026-08-31'),vlsi:null,cpp:null};
+  if(d==='vlsi'){const e=new Date(D.vlsiStart);e.setMonth(e.getMonth()+3);ends.vlsi=e;}
+  const deadline=ends[d]; if(!deadline)return{label:'⏱ In Progress',cls:'pace-on'};
+  const start=new Date('2026-01-01');
+  const total=Math.max(1,(deadline-start)/86400000);
+  const elapsed=Math.max(0,(today-start)/86400000);
+  const exp=Math.min(100,Math.round(elapsed/total*100));
+  if(pct>=exp+10)return{label:'🚀 Ahead',cls:'pace-ahead'};
+  if(pct>=exp-10)return{label:'✅ On Track',cls:'pace-on'};
+  return{label:'⚠️ Behind',cls:'pace-behind'};
+}
+
+function updateHeroStats(){
+  const el=document.getElementById('heroStats');
+  el.innerHTML=['gate','vlsi','cpp'].map(d=>{
+    const {done,total,pct}=calcProg(d);
+    const p=getPace(d);
+    const c=dColors[d]; const f=dFills[d];
+    const n={gate:'GATE EC',vlsi:'VLSI Jobs',cpp:'C++ Mastery'};
+    return `<div class="stat-tile st-${d}">
+      <div class="stat-label" style="margin-bottom:8px">${n[d]}</div>
+      <div class="stat-num" style="color:${c};font-size:40px">${pct}%</div>
+      <div style="font-size:12px;color:var(--mist);margin:4px 0">${done}/${total} tasks</div>
+      <div class="pbar"><div class="pbar-fill ${f}" style="width:${pct}%"></div></div>
+      <div class="pace ${p.cls}" style="margin-top:8px">${p.label}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateTodayTasks(){
+  const today=new Date().toISOString().split('T')[0];
+  const el=document.getElementById('todayTasksList');
+  document.getElementById('todayDate').textContent=fmtDate(today);
+  document.getElementById('todayDate2').textContent=today;
+  const tasks=D.tasks.filter(t=>t.due===today);
+  if(!tasks.length){el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">🌅</div><div class="empty-text">No tasks due today — add some!</div></div>';return;}
+  el.innerHTML=`<div style="max-height:220px;overflow-y:auto">` + tasks.map(t=>{
+    const c=dColors[t.domain];
+    const ck=dChecked[t.domain];
+    return `<div class="task-row ${t.done?'done':''}" style="padding:10px 14px">
+      <div class="tcb ${t.done?ck:''}" onclick="toggleTask('${t.id}')"></div>
+      <div class="tr-body">
+        <div class="tr-name" style="font-size:12px">${t.name}</div>
+        <div class="tr-meta">
+          <span class="chip" style="background:${c}18;color:${c}">${t.domain.toUpperCase()}</span>
+          <span class="chip chip-${t.type}">${t.type}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+function updateWeekChart(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const days=[]; for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);days.push(d);}
+  const counts=days.map(d=>D.activity[d.toISOString().split('T')[0]]||0);
+  const maxC=Math.max(...counts,1);
+  const todayStr=today.toISOString().split('T')[0];
+  const el=document.getElementById('weekChart');
+  el.innerHTML=days.map((d,i)=>{
+    const c=counts[i]; const h=Math.round((c/maxC)*52)+4;
+    const ds=d.toISOString().split('T')[0];
+    const isToday=ds===todayStr;
+    const dow=d.toLocaleDateString('en',{weekday:'short'}).slice(0,2);
+    return `<div class="wb-wrap"><div class="wb ${c>0?'active':''} ${isToday?'today':''}" style="height:${h}px"></div><span class="wb-label">${dow}</span></div>`;
+  }).join('');
+  const wk=counts.reduce((a,b)=>a+b,0);
+  document.getElementById('wkTotal').textContent=wk;
+  const mo=new Date(today.getFullYear(),today.getMonth(),1).toISOString().split('T')[0];
+  let moT=0; Object.entries(D.activity).forEach(([k,v])=>{if(k>=mo)moT+=v;});
+  document.getElementById('moTotal').textContent=moT;
+  let all=0; Object.values(D.activity).forEach(v=>all+=v);
+  document.getElementById('allTotal').textContent=all;
+}
+
+function updateTimeline(){
+  const el=document.getElementById('timelineEl');
+  const today=new Date().toISOString().split('T')[0];
+  let items=[];
+  ['gate','vlsi','cpp'].forEach(d=>{
+    (D.sections[d]||[]).filter(s=>s.deadline).forEach(s=>items.push({...s,domain:d}));
+  });
+  items.sort((a,b)=>a.deadline.localeCompare(b.deadline));
+  if(!items.length){el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">🗺️</div><div class="empty-text">Add sections with deadlines to see timeline</div></div>';return;}
+  const dLabel={gate:'GATE EC',vlsi:'VLSI',cpp:'C++'};
+  el.innerHTML='<div class="timeline-list">'+items.slice(0,10).map(s=>{
+    const tasks=D.tasks.filter(t=>t.domain===s.domain&&t.section===s.id);
+    const done=tasks.filter(t=>t.done).length;
+    const pct=tasks.length?Math.round(done/tasks.length*100):0;
+    const isDone=pct===100;
+    const isCurrent=!isDone&&s.deadline>=today;
+    const c=dColors[s.domain];
+    return `<div class="tl-row">
+      <div class="tl-dot ${isDone?'tl-done':isCurrent?'tl-current':''}"></div>
+      <div class="tl-content">
+        <div class="tl-name" style="color:${c}">${s.name} <span style="font-size:10px;color:var(--fog);font-weight:400">${dLabel[s.domain]}</span></div>
+        <div class="tl-meta">📅 ${fmtDate(s.deadline)} · ${done}/${tasks.length} tasks · ${pct}%</div>
+        <div class="tl-pbar"><div style="height:100%;border-radius:2px;background:${c};width:${pct}%"></div></div>
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+function updatePending(){
+  const el=document.getElementById('pendingCloud');
+  const today=new Date().toISOString().split('T')[0];
+  const overdue=D.tasks.filter(t=>!t.done&&t.due&&t.due<today);
+  const soon=D.tasks.filter(t=>{
+    if(t.done||!t.due)return false;
+    const diff=(new Date(t.due)-new Date(today))/86400000;
+    return diff>=0&&diff<=3;
+  });
+  if(!overdue.length&&!soon.length){el.innerHTML='<div style="color:var(--fog);font-size:13px;padding:4px">All clear! No overdue topics 🎉</div>';return;}
+  el.innerHTML=[...overdue.slice(0,6).map(t=>`<span class="pending-chip overdue">⚠️ ${t.name}</span>`),
+    ...soon.slice(0,6).map(t=>`<span class="pending-chip soon">🕐 ${t.name}</span>`)].join('');
+}
+
+function updateStreakCal(){
+  const el=document.getElementById('calMonths');
+  const today=new Date(); today.setHours(0,0,0,0);
+  const yr=new Date(today); yr.setFullYear(yr.getFullYear()-1);
+  const months={}; const cur=new Date(yr);
+  while(cur<=today){
+    const k=cur.toISOString().slice(0,7);
+    if(!months[k])months[k]=[];
+    months[k].push(new Date(cur));
+    cur.setDate(cur.getDate()+1);
+  }
+  const todayStr=today.toISOString().split('T')[0];
+  el.innerHTML=Object.entries(months).map(([m,days])=>{
+    const [y,mo]=m.split('-');
+    const lbl=new Date(y,mo-1,1).toLocaleDateString('en',{month:'short',year:'2-digit'});
+    return `<div class="cal-month">
+      <div class="cal-mlabel">${lbl}</div>
+      <div class="cal-grid">${days.map(d=>{
+        const ds=d.toISOString().split('T')[0];
+        const cnt=D.activity[ds]||0;
+        const allT=D.tasks.filter(t=>t.due===ds).length;
+        let cls='cal-cell';
+        if(cnt>0&&allT>0&&cnt>=allT)cls+=' full-day';
+        else if(cnt>0)cls+=' has-tasks';
+        if(ds===todayStr)cls+=' today-cell';
+        return `<div class="${cls}" title="${ds}: ${cnt} completed"></div>`;
+      }).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateStreakStats(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todayStr=today.toISOString().split('T')[0];
+  let cur=0;
+  if((D.activity[todayStr]||0)>0){
+    cur=1; const t=new Date(today); t.setDate(t.getDate()-1);
+    while((D.activity[t.toISOString().split('T')[0]]||0)>0){cur++;t.setDate(t.getDate()-1);}
+  }
+  let max=0,tmp=0,active=0;
+  const yr=new Date(today); yr.setFullYear(yr.getFullYear()-1);
+  const d=new Date(yr);
+  while(d<=today){
+    const ds=d.toISOString().split('T')[0];
+    if((D.activity[ds]||0)>0){tmp++;active++;if(tmp>max)max=tmp;}else tmp=0;
+    d.setDate(d.getDate()+1);
+  }
+  document.getElementById('curStreak').textContent=cur;
+  document.getElementById('maxStreak').textContent=max;
+  document.getElementById('actDays').textContent=active;
+  document.getElementById('streakPill').textContent=cur+' day streak';
+}
+
+function updateNavBadges(){
+  ['gate','vlsi','cpp'].forEach(d=>{
+    const t=D.tasks.filter(x=>x.domain===d&&!x.done).length;
+    document.getElementById('nb-'+d).textContent=t;
+  });
+}
+
+// ─────────── MOCK TEST ───────────
+function saveMock(){
+  const n=document.getElementById('mName').value.trim();
+  const s=parseFloat(document.getElementById('mScore').value);
+  if(!n||isNaN(s)){toast('Name and score required','te');return;}
+  if(s<0||s>100){toast('Score must be 0–100','te');return;}
+  D.mocks.push({id:'m'+Date.now(),name:n,score:s,
+    date:document.getElementById('mDate').value,
+    platform:document.getElementById('mPlatform').value,
+    time:document.getElementById('mTime').value,
+    weak:document.getElementById('mWeak').value,
+    notes:document.getElementById('mNotes').value
+  });
+  D.mocks.sort((a,b)=>a.date.localeCompare(b.date));
+  save(D); closeModal('mockModal'); toast('Mock test logged ✓','ts'); renderMock();
+}
+
+function deleteMock(id){D.mocks=D.mocks.filter(m=>m.id!==id);save(D);renderMock();toast('Removed','ti');}
+
+function estRank(s){
+  if(s>=90)return{r:'< 100',note:'🏆 Top 0.1% — Exceptional!'};
+  if(s>=80)return{r:'100–500',note:'⭐ Top 0.5% — Excellent'};
+  if(s>=70)return{r:'500–1,500',note:'✅ Top 1.5% — Very Good'};
+  if(s>=60)return{r:'1,500–4,000',note:'👍 Top 4% — Good'};
+  if(s>=50)return{r:'4,000–9,000',note:'📈 Average — keep pushing'};
+  if(s>=40)return{r:'9,000–18,000',note:'⚠️ Below average'};
+  if(s>=30)return{r:'18,000–30,000',note:'❗ Needs improvement'};
+  return{r:'30,000+',note:'🌱 Early stage — keep going!'};
+}
+
+function renderMock(){
+  const mocks=D.mocks;
+  const el=document.getElementById('mockStats');
+  if(!mocks.length){
+    el.innerHTML='<div class="stat-tile"><div class="stat-num" style="color:var(--fog)">—</div><div class="stat-label">Best Score</div></div>'.repeat(4);
+    document.getElementById('mockList').innerHTML='<div class="empty"><div class="empty-icon">📝</div><div class="empty-text">No mock tests logged yet</div><button class="btn btn-rose btn-sm" onclick="openModal(\'mockModal\')">+ Log First Test</button></div>';
+    document.getElementById('estRank').textContent='—';
+    document.getElementById('estRankNote').textContent='Add mock tests to estimate rank';
+    drawScoreChart([]);return;
+  }
+  const scores=mocks.map(m=>m.score);
+  const best=Math.max(...scores);
+  const avg=(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+  const latest=mocks[mocks.length-1].score;
+  const impr=mocks.length>1?((latest-mocks[0].score)>=0?'+':'')+(latest-mocks[0].score).toFixed(1):'—';
+  el.innerHTML=`
+    <div class="stat-tile st-gate"><div class="stat-num" style="color:var(--lime)">${best}</div><div class="stat-label">Best Score</div></div>
+    <div class="stat-tile st-vlsi"><div class="stat-num" style="color:var(--cyan)">${avg}</div><div class="stat-label">Average</div></div>
+    <div class="stat-tile st-cpp"><div class="stat-num" style="color:var(--amber)">${mocks.length}</div><div class="stat-label">Tests Taken</div></div>
+    <div class="stat-tile st-mock"><div class="stat-num" style="color:${parseFloat(impr)>=0?'var(--lime)':'var(--rose)'}">${impr}</div><div class="stat-label">Improvement</div></div>`;
+  const r=estRank(latest);
+  document.getElementById('estRank').textContent=r.r;
+  document.getElementById('estRankNote').textContent=r.note;
+  document.getElementById('mockList').innerHTML=[...mocks].reverse().map(m=>{
+    const r2=estRank(m.score);
+    const sc=m.score>=70?'var(--lime)':m.score>=50?'var(--amber)':'var(--rose)';
+    return `<div class="mock-row">
+      <div class="mock-score-box" style="background:${sc}18;color:${sc}">${m.score}</div>
+      <div class="mock-info">
+        <div class="mock-name">${m.name}</div>
+        <div class="mock-meta">${m.platform} · ${fmtDate(m.date)}${m.time?' · '+m.time+'min':''}</div>
+        ${m.weak?`<div class="mock-weak">⚠️ Weak: ${m.weak}</div>`:''}
+        ${m.notes?`<div style="font-size:11px;color:var(--fog);margin-top:2px">${m.notes}</div>`:''}
+      </div>
+      <div class="mock-rank-est"><div class="mre-num">${r2.r}</div><div class="mre-label">${r2.note}</div></div>
+      <button class="icon-btn del" onclick="deleteMock('${m.id}')">🗑</button>
+    </div>`;
+  }).join('');
+  drawScoreChart(mocks);
+}
+
+function drawScoreChart(mocks){
+  const canvas=document.getElementById('scoreCanvas'); if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const box=canvas.parentElement;
+  canvas.width=box.offsetWidth||320; canvas.height=140;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!mocks.length){
+    ctx.fillStyle='rgba(88,100,128,0.4)';ctx.font='12px Outfit';
+    ctx.textAlign='center';ctx.fillText('No data yet',canvas.width/2,70);return;
+  }
+  const W=canvas.width,H=canvas.height;
+  const p={t:10,b:26,l:30,r:10};
+  const w=W-p.l-p.r,h=H-p.t-p.b;
+  const scores=mocks.map(m=>m.score);
+  // Grid
+  ctx.strokeStyle='rgba(44,50,69,0.8)';ctx.lineWidth=1;
+  [0,25,50,75,100].forEach(v=>{
+    const y=p.t+h-(v/100)*h;
+    ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(W-p.r,y);ctx.stroke();
+    ctx.fillStyle='rgba(90,100,128,0.7)';ctx.font='9px JetBrains Mono';ctx.textAlign='right';
+    ctx.fillText(v,p.l-4,y+3);
+  });
+  // Area
+  if(scores.length>1){
+    const g=ctx.createLinearGradient(0,p.t,0,p.t+h);
+    g.addColorStop(0,'rgba(184,255,92,0.2)');g.addColorStop(1,'rgba(184,255,92,0.02)');
+    ctx.fillStyle=g; ctx.beginPath();
+    scores.forEach((s,i)=>{
+      const x=p.l+(i/(scores.length-1))*w;
+      const y=p.t+h-(s/100)*h;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.lineTo(p.l+w,p.t+h);ctx.lineTo(p.l,p.t+h);ctx.closePath();ctx.fill();
+  }
+  // Line
+  ctx.strokeStyle='rgba(184,255,92,0.9)';ctx.lineWidth=2;ctx.beginPath();
+  scores.forEach((s,i)=>{
+    const x=p.l+(scores.length>1?(i/(scores.length-1)):0.5)*w;
+    const y=p.t+h-(s/100)*h;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });ctx.stroke();
+  // Dots
+  scores.forEach((s,i)=>{
+    const x=p.l+(scores.length>1?(i/(scores.length-1)):0.5)*w;
+    const y=p.t+h-(s/100)*h;
+    ctx.fillStyle='var(--ink)';ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(184,255,92,1)';ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(90,100,128,0.8)';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+    if(mocks[i])ctx.fillText(mocks[i].date.slice(5),x,H-4);
+  });
+}
+
+// ─────────── RESOURCES ───────────
+function saveResource(){
+  const t=document.getElementById('rTitle').value.trim();
+  if(!t){toast('Title required','te');return;}
+  D.resources.push({id:'r'+Date.now(),title:t,desc:document.getElementById('rDesc').value,domain:document.getElementById('rDomain').value,type:document.getElementById('rType').value,url:document.getElementById('rUrl').value});
+  save(D);closeModal('resModal');toast('Resource added ✓','ts');renderResources('all');
+}
+function deleteRes(id){D.resources=D.resources.filter(r=>r.id!==id);save(D);renderResources('all');toast('Removed','ti');}
+
+let rFilter='all';
+function filterRes(f,el){
+  rFilter=f;
+  document.querySelectorAll('#page-resources .tp-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');renderResources(f);
+}
+function renderResources(f){
+  rFilter=f;
+  let res=D.resources;
+  if(f!=='all')res=res.filter(r=>r.domain===f||r.type===f);
+  const el=document.getElementById('resList');
+  if(!res.length){el.innerHTML='<div class="empty"><div class="empty-icon">📚</div><div class="empty-text">No resources found</div><button class="btn btn-iris btn-sm" onclick="openModal(\'resModal\')">+ Add Resource</button></div>';return;}
+  const dc={gate:'var(--lime)',vlsi:'var(--cyan)',cpp:'var(--amber)'};
+  const te={'book':'📚','video':'🎥','notes':'📄','practice':'✏️','website':'🌐'};
+  el.innerHTML=res.map(r=>`<div class="res-card">
+    <div class="res-title">
+      ${te[r.type]||'📌'} ${r.title}
+      <span class="chip" style="background:${dc[r.domain]||'var(--iris)'}18;color:${dc[r.domain]||'var(--iris)'}">${r.domain.toUpperCase()}</span>
+      <span class="chip chip-sec">${r.type}</span>
+    </div>
+    ${r.desc?`<div class="res-desc">${r.desc}</div>`:''}
+    <div class="res-foot">
+      ${r.url?`<a href="${r.url}" target="_blank" class="res-link">🔗 Open ↗</a>`:''}
+      <button class="btn btn-ghost btn-xs" onclick="deleteRes('${r.id}')">Remove</button>
+    </div>
+  </div>`).join('');
+}
+
+// ─────────── DIARY ───────────
+let diaryTopics=[];
+let diaryMood='';
+
+function renderDiary(){
+  renderDiaryList();
+  document.getElementById('diaryCount').textContent=D.diary.length;
+  const today=new Date().toISOString().split('T')[0];
+  // Check if today's entry exists
+  const todayEntry=D.diary.find(e=>e.date===today);
+  if(todayEntry) loadDiaryEntry(todayEntry.id);
+  else newDiaryEntry();
+}
+
+function renderDiaryList(){
+  const el=document.getElementById('diaryEntryList');
+  const cur=document.getElementById('diaryCurrentId').value;
+  if(!D.diary.length){
+    el.innerHTML='<div style="padding:16px;font-size:12px;color:var(--fog)">No entries yet. Start writing!</div>';
+    return;
+  }
+  el.innerHTML=[...D.diary].reverse().map(e=>`<div class="diary-entry-row ${e.id===cur?'active':''}" onclick="loadDiaryEntry('${e.id}')">
+    <div class="der-date">${fmtDate(e.date)} ${e.hours?'· '+e.hours+'h':''}</div>
+    <div class="der-preview">${e.title||e.study||'(no content)'}</div>
+    <div class="der-tags">
+      ${e.mood?`<span class="der-tag mood-${e.mood}">${e.mood}</span>`:''}
+      ${e.topics&&e.topics.length?`<span class="der-tag" style="background:rgba(92,200,255,0.1);color:var(--sky)">${e.topics.length} topics</span>`:''}
+    </div>
+  </div>`).join('');
+}
+
+function loadDiaryEntry(id){
+  const e=D.diary.find(x=>x.id===id); if(!e)return;
+  document.getElementById('diaryCurrentId').value=id;
+  document.getElementById('diaryEditorDate').textContent=fmtDate(e.date);
+  document.getElementById('diaryTitleInput').value=e.title||'';
+  document.getElementById('diaryStudy').value=e.study||'';
+  document.getElementById('diaryLearnings').value=e.learnings||'';
+  document.getElementById('diaryTomorrow').value=e.tomorrow||'';
+  document.getElementById('diaryReflection').value=e.reflection||'';
+  document.getElementById('diaryHours').value=e.hours||'';
+  diaryMood=e.mood||'';
+  document.querySelectorAll('.mood-btn').forEach(b=>{
+    b.classList.toggle('selected',b.textContent.toLowerCase().includes(e.mood));
+  });
+  diaryTopics=[...(e.topics||[])];
+  renderTopicPills();
+  document.getElementById('diaryDeleteBtn').style.display='inline-flex';
+  document.getElementById('diarySavedMsg').textContent='Last saved: '+fmtDate(e.date);
+  updateWordCount();
+  renderDiaryList();
+}
+
+function newDiaryEntry(){
+  const today=new Date().toISOString().split('T')[0];
+  const existing=D.diary.find(e=>e.date===today);
+  if(existing){loadDiaryEntry(existing.id);return;}
+  document.getElementById('diaryCurrentId').value='';
+  document.getElementById('diaryEditorDate').textContent='New Entry — '+fmtDate(today);
+  ['diaryTitleInput','diaryStudy','diaryLearnings','diaryTomorrow','diaryReflection'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById('diaryHours').value='';
+  diaryMood=''; diaryTopics=[];
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+  renderTopicPills();
+  document.getElementById('diaryDeleteBtn').style.display='none';
+  document.getElementById('diarySavedMsg').textContent='';
+  updateWordCount();
+}
+
+function saveDiaryEntry(){
+  const today=new Date().toISOString().split('T')[0];
+  const existId=document.getElementById('diaryCurrentId').value;
+  const entry={
+    id:existId||'d'+Date.now(),
+    date:today,
+    title:document.getElementById('diaryTitleInput').value.trim(),
+    study:document.getElementById('diaryStudy').value.trim(),
+    learnings:document.getElementById('diaryLearnings').value.trim(),
+    tomorrow:document.getElementById('diaryTomorrow').value.trim(),
+    reflection:document.getElementById('diaryReflection').value.trim(),
+    mood:diaryMood,
+    topics:[...diaryTopics],
+    hours:parseFloat(document.getElementById('diaryHours').value)||0,
+    savedAt:new Date().toISOString()
+  };
+  if(!entry.study&&!entry.title&&!entry.learnings&&!entry.reflection){toast('Write something first!','te');return;}
+  if(existId){const i=D.diary.findIndex(x=>x.id===existId);if(i>=0)D.diary[i]=entry;else D.diary.push(entry);}
+  else {D.diary.push(entry); document.getElementById('diaryCurrentId').value=entry.id;}
+  // Mark activity
+  D.activity[today]=(D.activity[today]||0); // diary saves don't count as task completions
+  save(D);
+  document.getElementById('diarySavedMsg').textContent='Saved at '+new Date().toLocaleTimeString();
+  document.getElementById('diaryDeleteBtn').style.display='inline-flex';
+  document.getElementById('diaryCount').textContent=D.diary.length;
+  renderDiaryList();
+  toast('Diary entry saved ✓','ts');
+  refreshDash();
+}
+
+function deleteDiaryEntry(){
+  const id=document.getElementById('diaryCurrentId').value; if(!id)return;
+  D.diary=D.diary.filter(e=>e.id!==id); save(D);
+  newDiaryEntry(); renderDiaryList();
+  document.getElementById('diaryCount').textContent=D.diary.length;
+  toast('Entry deleted','ti');
+}
+
+function clearDiaryEditor(){
+  if(!confirm('Clear this entry?'))return;
+  newDiaryEntry();
+}
+
+function selectMood(m,el){
+  diaryMood=m;
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function addDiaryTopic(){
+  const inp=document.getElementById('topicInput');
+  const v=inp.value.trim(); if(!v)return;
+  if(!diaryTopics.includes(v))diaryTopics.push(v);
+  inp.value=''; renderTopicPills();
+}
+
+function removeTopic(t){diaryTopics=diaryTopics.filter(x=>x!==t);renderTopicPills();}
+
+function renderTopicPills(){
+  const el=document.getElementById('topicsPills');
+  el.innerHTML=diaryTopics.map(t=>`<span class="topic-pill">${t}<button onclick="removeTopic('${t}')">×</button></span>`).join('');
+}
+
+function updateWordCount(){
+  const text=['diaryStudy','diaryLearnings','diaryTomorrow','diaryReflection'].map(f=>document.getElementById(f).value).join(' ');
+  const wc=text.trim().split(/\s+/).filter(w=>w.length>0).length;
+  document.getElementById('diaryWordCount').textContent=wc+' words';
+}
+['diaryStudy','diaryLearnings','diaryTomorrow','diaryReflection'].forEach(f=>{
+  document.getElementById(f).addEventListener('input',updateWordCount);
+});
+
+// ─────────── HELPERS ───────────
+function fmtDate(ds){
+  if(!ds)return'';
+  return new Date(ds+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function toast(msg,type='ti'){
+  const el=document.getElementById('toastEl');
+  const d=document.createElement('div');
+  d.className='toast '+type;
+  const ico={ts:'✅',te:'❌',ti:'ℹ️'}[type]||'ℹ️';
+  d.innerHTML=`<span>${ico}</span><span>${msg}</span>`;
+  el.appendChild(d);
+  setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(60px)';d.style.transition='all 0.3s';setTimeout(()=>d.remove(),300);},3000);
+}
+
+// ─────────── INIT ───────────
+async function init(){
+  refreshDash();
+  updateNavBadges();
+  // Try cloud load if credentials exist
+  if (_apiKey && _binId) {
+    setSaveStatus('loading');
+    document.getElementById('notConnectedBanner').style.display = 'none';
+    const cloudData = await cloudLoad();
+    if (cloudData && cloudData.tasks) {
+      D = cloudData;
+      // Ensure all required keys
+      if (!D.filters) D.filters = {gate:'all',vlsi:'all',cpp:'all'};
+      if (!D.activeSection) D.activeSection = {gate:null,vlsi:null,cpp:null};
+      if (!D.diary) D.diary = [];
+      if (!D.activity) D.activity = {};
+      if (!D.completedDates) D.completedDates = {};
+      if (!D.resources) D.resources = defaultResources();
+      refreshDash(); updateNavBadges();
+      setSaveStatus('saved');
+      showBinInfo(_binId);
+    } else {
+      setSaveStatus('error');
+    }
+  }
+}
+init();
+window.addEventListener('resize',()=>{
+  if(document.getElementById('page-mock').classList.contains('active'))drawScoreChart(D.mocks);
+});
+</script>
+</body>
+</html>
