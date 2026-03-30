@@ -38,6 +38,62 @@
 html{scroll-behavior:smooth}
 
 body {
+  <!-- PASSWORD PROTECTION START -->
+<div id="password-overlay" style="
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: #0f172a; z-index: 99999;
+  display: flex; align-items: center; justify-content: center;
+  font-family: sans-serif;">
+  <div style="
+    background: #1e293b; padding: 40px; border-radius: 16px;
+    text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    min-width: 300px;">
+    <div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
+    <h2 style="color: #f1f5f9; margin: 0 0 8px 0;">PrepOS</h2>
+    <p style="color: #94a3b8; margin: 0 0 24px 0; font-size: 14px;">Enter password to continue</p>
+    <input id="pwd-input" type="password" placeholder="Password"
+      style="
+        width: 100%; padding: 12px; border-radius: 8px;
+        border: 1px solid #334155; background: #0f172a;
+        color: #f1f5f9; font-size: 16px; box-sizing: border-box;
+        outline: none; margin-bottom: 12px;"
+      onkeydown="if(event.key==='Enter') checkPassword()" />
+    <button onclick="checkPassword()" style="
+      width: 100%; padding: 12px; background: #6366f1;
+      color: white; border: none; border-radius: 8px;
+      font-size: 16px; cursor: pointer; font-weight: bold;">
+      Unlock →
+    </button>
+    <p id="pwd-error" style="color: #f87171; margin-top: 12px; font-size: 13px; display:none;">
+      ❌ Wrong password. Try again.
+    </p>
+  </div>
+</div>
+
+<script>
+  (function() {
+    var PASSWORD = "priya2027"; // 👈 CHANGE THIS to your own password
+    var KEY = "prepos_auth_v1";
+    if (localStorage.getItem(KEY) === PASSWORD) {
+      document.getElementById("password-overlay").style.display = "none";
+    }
+  })();
+
+  function checkPassword() {
+    var PASSWORD = "priya2027"; // 👈 SAME password as above
+    var KEY = "prepos_auth_v1";
+    var input = document.getElementById("pwd-input").value;
+    if (input === PASSWORD) {
+      localStorage.setItem(KEY, PASSWORD);
+      document.getElementById("password-overlay").style.display = "none";
+    } else {
+      document.getElementById("pwd-error").style.display = "block";
+      document.getElementById("pwd-input").value = "";
+      document.getElementById("pwd-input").focus();
+    }
+  }
+</script>
+<!-- PASSWORD PROTECTION END -->
   background: var(--ink);
   color: var(--snow);
   font-family: var(--b);
