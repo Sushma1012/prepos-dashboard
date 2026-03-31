@@ -225,6 +225,12 @@ body {
   font-size: 12px;
   color: var(--amber);
   cursor: pointer;
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+.streak-pill.streak-active {
+  background: rgba(184,255,92,0.15);
+  border-color: rgba(184,255,92,0.4);
+  color: var(--lime);
 }
 
 /* ── MAIN ── */
@@ -591,6 +597,7 @@ body {
 .cal-cell.has-tasks  { background: rgba(184,255,92,0.2); }
 .cal-cell.full-day   { background: rgba(184,255,92,0.6); }
 .cal-cell.today-cell { box-shadow: 0 0 0 1.5px var(--amber); }
+.cal-cell.cal-future { background: rgba(44,50,69,0.3); opacity: 0.4; cursor: default; }
 
 /* ── TIMELINE ── */
 .timeline-list { position: relative; padding-left: 22px; }
@@ -813,6 +820,19 @@ canvas { border-radius: 6px; display: block; }
   display: flex; gap: 2px; margin-bottom: 0;
 }
 
+/* ── PAGE DATE CHIP ── */
+.page-date-chip {
+  font-family: var(--m);
+  font-size: 11px;
+  color: var(--mist);
+  background: var(--ink3);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 11px;
+  white-space: nowrap;
+  display: flex; align-items: center; gap: 5px;
+}
+
 /* ── SAVE BANNER ── */
 .save-banner {
   background: rgba(255,184,48,0.08);
@@ -900,7 +920,7 @@ canvas { border-radius: 6px; display: block; }
       <div class="page-subtitle">Your complete GATE EC 2027 preparation overview</div>
     </div>
     <div class="page-actions">
-      <div id="todayDate" style="font-family:var(--m);font-size:11px;color:var(--fog)"></div>
+      <div id="todayDate" style="font-family:var(--m);font-size:11px;color:var(--fog);background:var(--ink3);border:1px solid var(--line);border-radius:8px;padding:5px 11px;display:flex;align-items:center;gap:5px"></div>
       <span id="saveStatusEl" style="font-family:var(--m);font-size:11px;white-space:nowrap">⚠️ Not connected</span>
       <button class="btn btn-ghost btn-sm" onclick="exportData()" title="Download backup">📤 Backup</button>
       <button class="btn btn-ghost btn-sm" onclick="importData()" title="Restore backup">📥 Restore</button>
@@ -963,7 +983,7 @@ canvas { border-radius: 6px; display: block; }
   <!-- Streak -->
   <div class="card" id="streakCard">
     <div class="card-head">
-      <div class="card-title">🔥 Yearly Consistency Streak</div>
+      <div class="card-title">🔥 Consistency — Today → GATE 2027</div>
       <div style="display:flex;gap:20px;flex-wrap:wrap">
         <div><span style="font-family:var(--m);font-size:18px;font-weight:700;color:var(--amber)" id="curStreak">0</span><span style="font-size:10px;color:var(--fog);margin-left:4px">current</span></div>
         <div><span style="font-family:var(--m);font-size:18px;font-weight:700;color:var(--lime)" id="maxStreak">0</span><span style="font-size:10px;color:var(--fog);margin-left:4px">longest</span></div>
@@ -982,6 +1002,7 @@ canvas { border-radius: 6px; display: block; }
       <div class="page-subtitle">Full syllabus — Target: complete by <strong>August 31, 2026</strong></div>
     </div>
     <div class="page-actions">
+      <div class="page-date-chip" id="dateBadge-gate"></div>
       <button class="btn btn-ghost btn-sm" onclick="openModal('secModal','gate')">+ Section</button>
       <button class="btn btn-lime" onclick="openModal('taskModal','gate')">+ Add Task</button>
     </div>
@@ -1020,6 +1041,7 @@ canvas { border-radius: 6px; display: block; }
       <div class="page-subtitle" id="vlsiSubtitle">3-month intensive — target date loading...</div>
     </div>
     <div class="page-actions">
+      <div class="page-date-chip" id="dateBadge-vlsi"></div>
       <button class="btn btn-ghost btn-sm" onclick="openModal('secModal','vlsi')">+ Section</button>
       <button class="btn btn-cyan" onclick="openModal('taskModal','vlsi')">+ Add Task</button>
     </div>
@@ -1058,6 +1080,7 @@ canvas { border-radius: 6px; display: block; }
       <div class="page-subtitle">Track your C++ learning progress systematically</div>
     </div>
     <div class="page-actions">
+      <div class="page-date-chip" id="dateBadge-cpp"></div>
       <button class="btn btn-ghost btn-sm" onclick="openModal('secModal','cpp')">+ Section</button>
       <button class="btn btn-amber" onclick="openModal('taskModal','cpp')">+ Add Task</button>
     </div>
@@ -1096,6 +1119,7 @@ canvas { border-radius: 6px; display: block; }
       <div class="page-subtitle">Log scores, track trends, estimate your GATE rank</div>
     </div>
     <div class="page-actions">
+      <div class="page-date-chip" id="dateBadge-mock"></div>
       <button class="btn btn-rose" onclick="openModal('mockModal')">+ Log Test</button>
     </div>
   </div>
@@ -1123,6 +1147,7 @@ canvas { border-radius: 6px; display: block; }
       <div class="page-subtitle">Curated books, videos, and notes for GATE EC & VLSI</div>
     </div>
     <div class="page-actions">
+      <div class="page-date-chip" id="dateBadge-resources"></div>
       <button class="btn btn-iris" onclick="openModal('resModal')">+ Add Resource</button>
     </div>
   </div>
@@ -1146,6 +1171,7 @@ canvas { border-radius: 6px; display: block; }
       <div class="page-subtitle">Reflect, record progress, and stay motivated every day</div>
     </div>
     <div class="page-actions">
+      <div class="page-date-chip" id="dateBadge-diary"></div>
       <button class="btn btn-sky" onclick="newDiaryEntry()">+ New Entry</button>
     </div>
   </div>
@@ -1939,8 +1965,15 @@ function updateTodayTasks(){
   const el    = document.getElementById('todayTasksList');
   const dateEl = document.getElementById('todayDate');
   const date2El = document.getElementById('todayDate2');
-  if (dateEl)  dateEl.textContent  = fmtDate(today);
+  const formattedDate = fmtDate(today);
+  const dayName = new Date(today + 'T00:00:00').toLocaleDateString('en-IN', {weekday: 'long'});
+  if (dateEl)  dateEl.innerHTML  = '📅 ' + dayName + ', ' + formattedDate;
   if (date2El) date2El.textContent = today;
+  // Populate date badge on every page
+  ['gate','vlsi','cpp','mock','resources','diary'].forEach(p => {
+    const badge = document.getElementById('dateBadge-' + p);
+    if (badge) badge.innerHTML = '📅 ' + dayName + ', ' + formattedDate;
+  });
   const tasks = D.tasks.filter(t => t.due === today);
   if (!tasks.length){ el.innerHTML = '<div class="empty" style="padding:20px"><div class="empty-icon">🌅</div><div class="empty-text">No tasks due today — add some!</div></div>'; return; }
   el.innerHTML = '<div style="max-height:220px;overflow-y:auto">' + tasks.map(t => {
@@ -2006,9 +2039,9 @@ function updatePending(){
 function updateStreakCal(){
   const el    = document.getElementById('calMonths');
   const today = new Date(); today.setHours(0,0,0,0);
-  const yr    = new Date(today); yr.setFullYear(yr.getFullYear()-1);
-  const months = {}; const cur = new Date(yr);
-  while (cur <= today){
+  const end   = new Date(2027, 2, 31); // March 31, 2027
+  const months = {}; const cur = new Date(today);
+  while (cur <= end){
     const k = cur.toISOString().slice(0,7);
     if (!months[k]) months[k] = [];
     months[k].push(new Date(cur));
@@ -2021,13 +2054,15 @@ function updateStreakCal(){
     return '<div class="cal-month"><div class="cal-mlabel">' + lbl + '</div><div class="cal-grid">'
       + days.map(d => {
           const ds  = d.toISOString().split('T')[0];
+          const isFuture = ds > todayStr;
           const cnt = D.activity[ds]||0;
           const allT= D.tasks.filter(t=>t.due===ds).length;
           let cls = 'cal-cell';
-          if (cnt>0 && allT>0 && cnt>=allT) cls += ' full-day';
+          if (isFuture) cls += ' cal-future';
+          else if (cnt>0 && allT>0 && cnt>=allT) cls += ' full-day';
           else if (cnt>0) cls += ' has-tasks';
           if (ds===todayStr) cls += ' today-cell';
-          return '<div class="' + cls + '" title="' + ds + ': ' + cnt + ' completed"></div>';
+          return '<div class="' + cls + '" title="' + ds + (isFuture ? ' (upcoming)' : ': ' + cnt + ' completed') + '"></div>';
         }).join('')
       + '</div></div>';
   }).join('');
@@ -2041,7 +2076,7 @@ function updateStreakStats(){
     while ((D.activity[t.toISOString().split('T')[0]]||0) > 0){ cur++; t.setDate(t.getDate()-1); }
   }
   let max=0, tmp=0, active=0;
-  const yr = new Date(today); yr.setFullYear(yr.getFullYear()-1);
+  const yr = new Date(today.getFullYear(), 0, 1); // Jan 1 of current year
   const d  = new Date(yr);
   while (d <= today){
     const ds = d.toISOString().split('T')[0];
@@ -2051,7 +2086,17 @@ function updateStreakStats(){
   document.getElementById('curStreak').textContent  = cur;
   document.getElementById('maxStreak').textContent  = max;
   document.getElementById('actDays').textContent    = active;
-  document.getElementById('streakPill').textContent = cur + ' day streak';
+  const todayActive = (D.activity[todayStr]||0) > 0;
+  const pill = document.getElementById('streakPill');
+  const pillWrap = pill.closest('.streak-pill');
+  pill.textContent = cur + ' day streak';
+  if (todayActive){
+    pillWrap.classList.add('streak-active');
+    pillWrap.innerHTML = '🟢 <span id="streakPill">' + cur + ' day streak</span>';
+  } else {
+    pillWrap.classList.remove('streak-active');
+    pillWrap.innerHTML = '🔥 <span id="streakPill">' + cur + ' day streak</span>';
+  }
 }
 function updateNavBadges(){
   ['gate','vlsi','cpp'].forEach(d => {
@@ -2294,6 +2339,17 @@ document.addEventListener('DOMContentLoaded', init);
 window.addEventListener('resize', () => {
   if (document.getElementById('page-mock').classList.contains('active')) drawScoreChart(D.mocks);
 });
+
+// ─── AUTO DATE REFRESH AT MIDNIGHT ───
+function scheduleMidnightRefresh(){
+  const now = new Date();
+  const msUntilMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1, 0, 0, 5) - now;
+  setTimeout(() => {
+    refreshDash();          // re-render everything with the new date
+    scheduleMidnightRefresh(); // schedule the next day
+  }, msUntilMidnight);
+}
+scheduleMidnightRefresh();
 </script>
 </body>
 </html>
